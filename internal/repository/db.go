@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 
 	_ "modernc.org/sqlite"
 )
@@ -22,7 +23,7 @@ func InitDB(dbPath string) error {
 		return err
 	}
 
-	if err = runMigrations(dbPath); err != nil {
+	if err = runMigrations(); err != nil {
 		return err
 	}
 
@@ -30,7 +31,7 @@ func InitDB(dbPath string) error {
 	return nil
 }
 
-func runMigrations(dbPath string) error {
+func runMigrations() error {
 	ex, err := os.Executable()
 	if err != nil {
 		return err
@@ -40,18 +41,37 @@ func runMigrations(dbPath string) error {
 		dir = "."
 	}
 
-	migrationPath := filepath.Join(dir, "migrations", "000001_init_schema.up.sql")
-	if _, err := os.Stat(migrationPath); os.IsNotExist(err) {
-		migrationPath = filepath.Join(".", "migrations", "000001_init_schema.up.sql")
+	migrationsDir := filepath.Join(dir, "migrations")
+	if _, err := os.Stat(migrationsDir); os.IsNotExist(err) {
+		migrationsDir = filepath.Join(".", "migrations")
 	}
 
-	data, err := os.ReadFile(migrationPath)
+	entries, err := os.ReadDir(migrationsDir)
 	if err != nil {
 		return err
 	}
 
-	_, err = DB.Exec(string(data))
-	return err
+	var files []string
+	for _, e := range entries {
+		if !e.IsDir() && filepath.Ext(e.Name()) == ".sql" {
+			files = append(files, e.Name())
+		}
+	}
+	sort.Strings(files)
+
+	for _, f := range files {
+		data, err := os.ReadFile(filepath.Join(migrationsDir, f))
+		if err != nil {
+			return err
+		}
+		if _, err := DB.Exec(string(data)); err != nil {
+			log.Printf("Warning: migration %s failed (may already be applied): %v", f, err)
+		} else {
+			log.Printf("Applied migration: %s", f)
+		}
+	}
+
+	return nil
 }
 
 func CloseDB() {

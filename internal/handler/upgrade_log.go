@@ -1,74 +1,44 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
-	"strconv"
-	"time"
 
 	"github.com/labstack/echo/v5"
-	"lab-asset-manager/internal/models"
-	"lab-asset-manager/internal/repository"
+	"lab-asset-manager/internal/middleware"
+	"lab-asset-manager/internal/service"
 )
 
-type UpgradeLogHandler struct{}
+type UpgradeLogHandler struct {
+	svc *service.UpgradeLogService
+}
 
 func NewUpgradeLogHandler() *UpgradeLogHandler {
-	return &UpgradeLogHandler{}
+	return &UpgradeLogHandler{svc: service.NewUpgradeLogService()}
 }
 
 func (h *UpgradeLogHandler) GetByAssetID(c *echo.Context) error {
 	assetID := c.Param("assetId")
-
-	rows, err := repository.DB.Query(`
-		SELECT id, asset_id, upgrade_date, description 
-		FROM upgrade_logs 
-		WHERE asset_id = ? 
-		ORDER BY upgrade_date DESC
-	`, assetID)
+	logs, err := h.svc.GetByAssetID(assetID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
-	defer rows.Close()
-
-	var logs []models.UpgradeLog
-	for rows.Next() {
-		var log models.UpgradeLog
-		if err := rows.Scan(&log.ID, &log.AssetID, &log.UpgradeDate, &log.Description); err != nil {
-			continue
-		}
-		logs = append(logs, log)
-	}
-
-	if logs == nil {
-		logs = []models.UpgradeLog{}
-	}
-
 	return c.JSON(http.StatusOK, logs)
 }
 
 func (h *UpgradeLogHandler) Create(c *echo.Context) error {
 	assetID := c.Param("assetId")
-
-	var log models.UpgradeLog
-	if err := c.Bind(&log); err != nil {
+	var input service.CreateUpgradeLogInput
+	if err := c.Bind(&input); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
-	if log.UpgradeDate.IsZero() {
-		log.UpgradeDate = time.Now()
-	}
-
-	result, err := repository.DB.Exec(`
-		INSERT INTO upgrade_logs (asset_id, upgrade_date, description) 
-		VALUES (?, ?, ?)
-	`, assetID, log.UpgradeDate, log.Description)
+	log, err := h.svc.Create(assetID, input)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	id, _ := result.LastInsertId()
-	log.ID = id
-	log.AssetID, _ = strconv.ParseInt(assetID, 10, 64)
+	go service.RecordAudit(middleware.GetUserID(c), string(service.AuditCreate), "upgrade_log", fmt.Sprint(log.ID), log, c.RealIP())
 
 	return c.JSON(http.StatusCreated, log)
 }
@@ -76,10 +46,11 @@ func (h *UpgradeLogHandler) Create(c *echo.Context) error {
 func (h *UpgradeLogHandler) Delete(c *echo.Context) error {
 	id := c.Param("id")
 
-	_, err := repository.DB.Exec("DELETE FROM upgrade_logs WHERE id = ?", id)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	if err := h.svc.Delete(id); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
+
+	go service.RecordAudit(middleware.GetUserID(c), string(service.AuditDelete), "upgrade_log", id, nil, c.RealIP())
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "deleted"})
 }

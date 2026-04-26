@@ -24,56 +24,54 @@ export function CategoriesTable({
   const categories = useMasterDataStore((s) => s.categories);
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
+    <Table className='min-w-xl'>
+      <TableHeader>
+        <TableRow>
+          <TableHead>ID</TableHead>
+          <TableHead>Name</TableHead>
+          <TableHead>Created At</TableHead>
+          <TableHead className="w-[100px]">Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {categories.length === 0 ? (
           <TableRow>
-            <TableHead>ID</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Created At</TableHead>
-            <TableHead className="w-[100px]">Actions</TableHead>
+            <TableCell colSpan={4} className="h-24 text-center">
+              No categories found.
+            </TableCell>
           </TableRow>
-        </TableHeader>
-        <TableBody>
-          {categories.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={4} className="text-center">
-                No categories found
+        ) : (
+          categories.map((category) => (
+            <TableRow key={category.id}>
+              <TableCell>{category.id}</TableCell>
+              <TableCell>
+                <Badge variant="outline">{category.name}</Badge>
+              </TableCell>
+              <TableCell>
+                {new Date(category.created_at).toLocaleDateString()}
+              </TableCell>
+              <TableCell>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onEdit(category)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onDelete(category.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
-          ) : (
-            categories.map((category) => (
-              <TableRow key={category.id}>
-                <TableCell>{category.id}</TableCell>
-                <TableCell>
-                  <Badge variant="outline">{category.name}</Badge>
-                </TableCell>
-                <TableCell>
-                  {new Date(category.created_at).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onEdit(category)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onDelete(category.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </div>
+          ))
+        )}
+      </TableBody>
+    </Table>
   );
 }

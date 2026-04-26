@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ClerkRouteRouteImport } from './routes/clerk/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as QuickLoanIndexRouteImport } from './routes/quick-loan/index'
+import { Route as HomeIndexRouteImport } from './routes/home/index'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
 import { Route as errors500RouteImport } from './routes/(errors)/500'
@@ -28,8 +30,14 @@ import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authen
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
 import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
+import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports/index'
+import { Route as AuthenticatedNotificationsIndexRouteImport } from './routes/_authenticated/notifications/index'
+import { Route as AuthenticatedMassLabelPrintIndexRouteImport } from './routes/_authenticated/mass-label-print/index'
+import { Route as AuthenticatedLoansIndexRouteImport } from './routes/_authenticated/loans/index'
+import { Route as AuthenticatedImportExportIndexRouteImport } from './routes/_authenticated/import-export/index'
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
+import { Route as AuthenticatedAuditLogsIndexRouteImport } from './routes/_authenticated/audit-logs/index'
 import { Route as AuthenticatedAssetsIndexRouteImport } from './routes/_authenticated/assets/index'
 import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authenticated/apps/index'
 import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
@@ -41,6 +49,7 @@ import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_a
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 import { Route as PublicAssetIdIndexRouteImport } from './routes/public/asset/$id/index'
+import { Route as AuthenticatedSettingsLabelIndexRouteImport } from './routes/_authenticated/settings/label/index'
 import { Route as AuthenticatedMasterDataLocationsIndexRouteImport } from './routes/_authenticated/master-data/locations/index'
 import { Route as AuthenticatedMasterDataCategoriesIndexRouteImport } from './routes/_authenticated/master-data/categories/index'
 import { Route as AuthenticatedMasterDataBudgetSourcesIndexRouteImport } from './routes/_authenticated/master-data/budget-sources/index'
@@ -55,6 +64,16 @@ const ClerkRouteRoute = ClerkRouteRouteImport.update({
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QuickLoanIndexRoute = QuickLoanIndexRouteImport.update({
+  id: '/quick-loan/',
+  path: '/quick-loan/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HomeIndexRoute = HomeIndexRouteImport.update({
+  id: '/home/',
+  path: '/home/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
@@ -142,6 +161,35 @@ const AuthenticatedSettingsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedReportsIndexRoute =
+  AuthenticatedReportsIndexRouteImport.update({
+    id: '/reports/',
+    path: '/reports/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedNotificationsIndexRoute =
+  AuthenticatedNotificationsIndexRouteImport.update({
+    id: '/notifications/',
+    path: '/notifications/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMassLabelPrintIndexRoute =
+  AuthenticatedMassLabelPrintIndexRouteImport.update({
+    id: '/mass-label-print/',
+    path: '/mass-label-print/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLoansIndexRoute = AuthenticatedLoansIndexRouteImport.update({
+  id: '/loans/',
+  path: '/loans/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedImportExportIndexRoute =
+  AuthenticatedImportExportIndexRouteImport.update({
+    id: '/import-export/',
+    path: '/import-export/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedHelpCenterIndexRoute =
   AuthenticatedHelpCenterIndexRouteImport.update({
     id: '/help-center/',
@@ -153,6 +201,12 @@ const AuthenticatedChatsIndexRoute = AuthenticatedChatsIndexRouteImport.update({
   path: '/chats/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAuditLogsIndexRoute =
+  AuthenticatedAuditLogsIndexRouteImport.update({
+    id: '/audit-logs/',
+    path: '/audit-logs/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAssetsIndexRoute =
   AuthenticatedAssetsIndexRouteImport.update({
     id: '/assets/',
@@ -215,6 +269,12 @@ const PublicAssetIdIndexRoute = PublicAssetIdIndexRouteImport.update({
   path: '/public/asset/$id/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedSettingsLabelIndexRoute =
+  AuthenticatedSettingsLabelIndexRouteImport.update({
+    id: '/label/',
+    path: '/label/',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
 const AuthenticatedMasterDataLocationsIndexRoute =
   AuthenticatedMasterDataLocationsIndexRouteImport.update({
     id: '/master-data/locations/',
@@ -266,6 +326,8 @@ export interface FileRoutesByFullPath {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
+  '/home/': typeof HomeIndexRoute
+  '/quick-loan/': typeof QuickLoanIndexRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
@@ -276,8 +338,14 @@ export interface FileRoutesByFullPath {
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/apps/': typeof AuthenticatedAppsIndexRoute
   '/assets/': typeof AuthenticatedAssetsIndexRoute
+  '/audit-logs/': typeof AuthenticatedAuditLogsIndexRoute
   '/chats/': typeof AuthenticatedChatsIndexRoute
   '/help-center/': typeof AuthenticatedHelpCenterIndexRoute
+  '/import-export/': typeof AuthenticatedImportExportIndexRoute
+  '/loans/': typeof AuthenticatedLoansIndexRoute
+  '/mass-label-print/': typeof AuthenticatedMassLabelPrintIndexRoute
+  '/notifications/': typeof AuthenticatedNotificationsIndexRoute
+  '/reports/': typeof AuthenticatedReportsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/tasks/': typeof AuthenticatedTasksIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
@@ -286,6 +354,7 @@ export interface FileRoutesByFullPath {
   '/master-data/budget-sources/': typeof AuthenticatedMasterDataBudgetSourcesIndexRoute
   '/master-data/categories/': typeof AuthenticatedMasterDataCategoriesIndexRoute
   '/master-data/locations/': typeof AuthenticatedMasterDataLocationsIndexRoute
+  '/settings/label/': typeof AuthenticatedSettingsLabelIndexRoute
   '/public/asset/$id/': typeof PublicAssetIdIndexRoute
   '/assets/$id/edit/': typeof AuthenticatedAssetsIdEditIndexRoute
 }
@@ -302,6 +371,8 @@ export interface FileRoutesByTo {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/': typeof AuthenticatedIndexRoute
+  '/home': typeof HomeIndexRoute
+  '/quick-loan': typeof QuickLoanIndexRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
@@ -312,8 +383,14 @@ export interface FileRoutesByTo {
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/assets': typeof AuthenticatedAssetsIndexRoute
+  '/audit-logs': typeof AuthenticatedAuditLogsIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
+  '/import-export': typeof AuthenticatedImportExportIndexRoute
+  '/loans': typeof AuthenticatedLoansIndexRoute
+  '/mass-label-print': typeof AuthenticatedMassLabelPrintIndexRoute
+  '/notifications': typeof AuthenticatedNotificationsIndexRoute
+  '/reports': typeof AuthenticatedReportsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
@@ -322,6 +399,7 @@ export interface FileRoutesByTo {
   '/master-data/budget-sources': typeof AuthenticatedMasterDataBudgetSourcesIndexRoute
   '/master-data/categories': typeof AuthenticatedMasterDataCategoriesIndexRoute
   '/master-data/locations': typeof AuthenticatedMasterDataLocationsIndexRoute
+  '/settings/label': typeof AuthenticatedSettingsLabelIndexRoute
   '/public/asset/$id': typeof PublicAssetIdIndexRoute
   '/assets/$id/edit': typeof AuthenticatedAssetsIdEditIndexRoute
 }
@@ -343,6 +421,8 @@ export interface FileRoutesById {
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/home/': typeof HomeIndexRoute
+  '/quick-loan/': typeof QuickLoanIndexRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
@@ -353,8 +433,14 @@ export interface FileRoutesById {
   '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
   '/_authenticated/assets/': typeof AuthenticatedAssetsIndexRoute
+  '/_authenticated/audit-logs/': typeof AuthenticatedAuditLogsIndexRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
+  '/_authenticated/import-export/': typeof AuthenticatedImportExportIndexRoute
+  '/_authenticated/loans/': typeof AuthenticatedLoansIndexRoute
+  '/_authenticated/mass-label-print/': typeof AuthenticatedMassLabelPrintIndexRoute
+  '/_authenticated/notifications/': typeof AuthenticatedNotificationsIndexRoute
+  '/_authenticated/reports/': typeof AuthenticatedReportsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
@@ -363,6 +449,7 @@ export interface FileRoutesById {
   '/_authenticated/master-data/budget-sources/': typeof AuthenticatedMasterDataBudgetSourcesIndexRoute
   '/_authenticated/master-data/categories/': typeof AuthenticatedMasterDataCategoriesIndexRoute
   '/_authenticated/master-data/locations/': typeof AuthenticatedMasterDataLocationsIndexRoute
+  '/_authenticated/settings/label/': typeof AuthenticatedSettingsLabelIndexRoute
   '/public/asset/$id/': typeof PublicAssetIdIndexRoute
   '/_authenticated/assets/$id/edit/': typeof AuthenticatedAssetsIdEditIndexRoute
 }
@@ -382,6 +469,8 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
+    | '/home/'
+    | '/quick-loan/'
     | '/errors/$error'
     | '/settings/account'
     | '/settings/appearance'
@@ -392,8 +481,14 @@ export interface FileRouteTypes {
     | '/clerk/user-management'
     | '/apps/'
     | '/assets/'
+    | '/audit-logs/'
     | '/chats/'
     | '/help-center/'
+    | '/import-export/'
+    | '/loans/'
+    | '/mass-label-print/'
+    | '/notifications/'
+    | '/reports/'
     | '/settings/'
     | '/tasks/'
     | '/users/'
@@ -402,6 +497,7 @@ export interface FileRouteTypes {
     | '/master-data/budget-sources/'
     | '/master-data/categories/'
     | '/master-data/locations/'
+    | '/settings/label/'
     | '/public/asset/$id/'
     | '/assets/$id/edit/'
   fileRoutesByTo: FileRoutesByTo
@@ -418,6 +514,8 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/'
+    | '/home'
+    | '/quick-loan'
     | '/errors/$error'
     | '/settings/account'
     | '/settings/appearance'
@@ -428,8 +526,14 @@ export interface FileRouteTypes {
     | '/clerk/user-management'
     | '/apps'
     | '/assets'
+    | '/audit-logs'
     | '/chats'
     | '/help-center'
+    | '/import-export'
+    | '/loans'
+    | '/mass-label-print'
+    | '/notifications'
+    | '/reports'
     | '/settings'
     | '/tasks'
     | '/users'
@@ -438,6 +542,7 @@ export interface FileRouteTypes {
     | '/master-data/budget-sources'
     | '/master-data/categories'
     | '/master-data/locations'
+    | '/settings/label'
     | '/public/asset/$id'
     | '/assets/$id/edit'
   id:
@@ -458,6 +563,8 @@ export interface FileRouteTypes {
     | '/(errors)/500'
     | '/(errors)/503'
     | '/_authenticated/'
+    | '/home/'
+    | '/quick-loan/'
     | '/_authenticated/errors/$error'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
@@ -468,8 +575,14 @@ export interface FileRouteTypes {
     | '/clerk/_authenticated/user-management'
     | '/_authenticated/apps/'
     | '/_authenticated/assets/'
+    | '/_authenticated/audit-logs/'
     | '/_authenticated/chats/'
     | '/_authenticated/help-center/'
+    | '/_authenticated/import-export/'
+    | '/_authenticated/loans/'
+    | '/_authenticated/mass-label-print/'
+    | '/_authenticated/notifications/'
+    | '/_authenticated/reports/'
     | '/_authenticated/settings/'
     | '/_authenticated/tasks/'
     | '/_authenticated/users/'
@@ -478,6 +591,7 @@ export interface FileRouteTypes {
     | '/_authenticated/master-data/budget-sources/'
     | '/_authenticated/master-data/categories/'
     | '/_authenticated/master-data/locations/'
+    | '/_authenticated/settings/label/'
     | '/public/asset/$id/'
     | '/_authenticated/assets/$id/edit/'
   fileRoutesById: FileRoutesById
@@ -495,6 +609,8 @@ export interface RootRouteChildren {
   errors404Route: typeof errors404Route
   errors500Route: typeof errors500Route
   errors503Route: typeof errors503Route
+  HomeIndexRoute: typeof HomeIndexRoute
+  QuickLoanIndexRoute: typeof QuickLoanIndexRoute
   PublicAssetIdIndexRoute: typeof PublicAssetIdIndexRoute
 }
 
@@ -512,6 +628,20 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/quick-loan/': {
+      id: '/quick-loan/'
+      path: '/quick-loan'
+      fullPath: '/quick-loan/'
+      preLoaderRoute: typeof QuickLoanIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/home/': {
+      id: '/home/'
+      path: '/home'
+      fullPath: '/home/'
+      preLoaderRoute: typeof HomeIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/': {
@@ -633,6 +763,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/reports/': {
+      id: '/_authenticated/reports/'
+      path: '/reports'
+      fullPath: '/reports/'
+      preLoaderRoute: typeof AuthenticatedReportsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/notifications/': {
+      id: '/_authenticated/notifications/'
+      path: '/notifications'
+      fullPath: '/notifications/'
+      preLoaderRoute: typeof AuthenticatedNotificationsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/mass-label-print/': {
+      id: '/_authenticated/mass-label-print/'
+      path: '/mass-label-print'
+      fullPath: '/mass-label-print/'
+      preLoaderRoute: typeof AuthenticatedMassLabelPrintIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/loans/': {
+      id: '/_authenticated/loans/'
+      path: '/loans'
+      fullPath: '/loans/'
+      preLoaderRoute: typeof AuthenticatedLoansIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/import-export/': {
+      id: '/_authenticated/import-export/'
+      path: '/import-export'
+      fullPath: '/import-export/'
+      preLoaderRoute: typeof AuthenticatedImportExportIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/help-center/': {
       id: '/_authenticated/help-center/'
       path: '/help-center'
@@ -645,6 +810,13 @@ declare module '@tanstack/react-router' {
       path: '/chats'
       fullPath: '/chats/'
       preLoaderRoute: typeof AuthenticatedChatsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/audit-logs/': {
+      id: '/_authenticated/audit-logs/'
+      path: '/audit-logs'
+      fullPath: '/audit-logs/'
+      preLoaderRoute: typeof AuthenticatedAuditLogsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/assets/': {
@@ -724,6 +896,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicAssetIdIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/settings/label/': {
+      id: '/_authenticated/settings/label/'
+      path: '/label'
+      fullPath: '/settings/label/'
+      preLoaderRoute: typeof AuthenticatedSettingsLabelIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
     '/_authenticated/master-data/locations/': {
       id: '/_authenticated/master-data/locations/'
       path: '/master-data/locations'
@@ -775,6 +954,7 @@ interface AuthenticatedSettingsRouteRouteChildren {
   AuthenticatedSettingsDisplayRoute: typeof AuthenticatedSettingsDisplayRoute
   AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
+  AuthenticatedSettingsLabelIndexRoute: typeof AuthenticatedSettingsLabelIndexRoute
 }
 
 const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteChildren =
@@ -785,6 +965,7 @@ const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteCh
     AuthenticatedSettingsNotificationsRoute:
       AuthenticatedSettingsNotificationsRoute,
     AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
+    AuthenticatedSettingsLabelIndexRoute: AuthenticatedSettingsLabelIndexRoute,
   }
 
 const AuthenticatedSettingsRouteRouteWithChildren =
@@ -798,8 +979,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedAssetsIndexRoute: typeof AuthenticatedAssetsIndexRoute
+  AuthenticatedAuditLogsIndexRoute: typeof AuthenticatedAuditLogsIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
+  AuthenticatedImportExportIndexRoute: typeof AuthenticatedImportExportIndexRoute
+  AuthenticatedLoansIndexRoute: typeof AuthenticatedLoansIndexRoute
+  AuthenticatedMassLabelPrintIndexRoute: typeof AuthenticatedMassLabelPrintIndexRoute
+  AuthenticatedNotificationsIndexRoute: typeof AuthenticatedNotificationsIndexRoute
+  AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
   AuthenticatedAssetsIdIndexRoute: typeof AuthenticatedAssetsIdIndexRoute
@@ -816,8 +1003,14 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
   AuthenticatedAssetsIndexRoute: AuthenticatedAssetsIndexRoute,
+  AuthenticatedAuditLogsIndexRoute: AuthenticatedAuditLogsIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
+  AuthenticatedImportExportIndexRoute: AuthenticatedImportExportIndexRoute,
+  AuthenticatedLoansIndexRoute: AuthenticatedLoansIndexRoute,
+  AuthenticatedMassLabelPrintIndexRoute: AuthenticatedMassLabelPrintIndexRoute,
+  AuthenticatedNotificationsIndexRoute: AuthenticatedNotificationsIndexRoute,
+  AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
   AuthenticatedAssetsIdIndexRoute: AuthenticatedAssetsIdIndexRoute,
@@ -890,6 +1083,8 @@ const rootRouteChildren: RootRouteChildren = {
   errors404Route: errors404Route,
   errors500Route: errors500Route,
   errors503Route: errors503Route,
+  HomeIndexRoute: HomeIndexRoute,
+  QuickLoanIndexRoute: QuickLoanIndexRoute,
   PublicAssetIdIndexRoute: PublicAssetIdIndexRoute,
 }
 export const routeTree = rootRouteImport

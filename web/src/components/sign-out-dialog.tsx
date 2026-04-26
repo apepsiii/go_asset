@@ -1,5 +1,5 @@
+import { useClerk } from '@clerk/react'
 import { useNavigate, useLocation } from '@tanstack/react-router'
-import { useAuthStore } from '@/stores/auth-store'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 
 interface SignOutDialogProps {
@@ -8,17 +8,16 @@ interface SignOutDialogProps {
 }
 
 export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
+  const { signOut } = useClerk()
   const navigate = useNavigate()
   const location = useLocation()
-  const { auth } = useAuthStore()
 
-  const handleSignOut = () => {
-    auth.reset()
-    // Preserve current location for redirect after sign-in
-    const currentPath = location.href
+  const handleSignOut = async () => {
+    onOpenChange(false)
+    await signOut()
     navigate({
       to: '/sign-in',
-      search: { redirect: currentPath },
+      search: { redirect: location.href },
       replace: true,
     })
   }

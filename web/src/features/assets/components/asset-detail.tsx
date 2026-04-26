@@ -33,6 +33,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Header } from "@/components/layout/header";
+import { Main } from "@/components/layout/main";
 import {
   assetApi,
   categoryApi,
@@ -42,9 +44,12 @@ import {
   upgradeLogApi,
   qrCodeApi,
   labelApi,
+  loanApi,
   type Asset,
   type MaintenanceLog,
   type UpgradeLog,
+  type LoanWithAsset,
+  type DepreciationInfo,
 } from "@/lib/api";
 
 const conditionLabels: Record<string, { label: string; color: string }> = {
@@ -52,6 +57,12 @@ const conditionLabels: Record<string, { label: string; color: string }> = {
   RUSAK_RINGAN: { label: "Rusak Ringan", color: "bg-yellow-500" },
   RUSAK_TOTAL: { label: "Rusak Total", color: "bg-red-500" },
   MAINTENANCE: { label: "Maintenance", color: "bg-blue-500" },
+};
+
+const depreciationStatusLabels: Record<string, { label: string; color: string }> = {
+  healthy: { label: " Sehat", color: "bg-green-500" },
+  depreciated: { label: "Menurun", color: "bg-yellow-500" },
+  fully_depreciated: { label: "Fully Depreciated", color: "bg-red-500" },
 };
 
 export function AssetDetail() {
@@ -63,6 +74,8 @@ export function AssetDetail() {
   const [budgetSources, setBudgetSources] = useState<{ id: number; name: string }[]>([]);
   const [maintenanceLogs, setMaintenanceLogs] = useState<MaintenanceLog[]>([]);
   const [upgradeLogs, setUpgradeLogs] = useState<UpgradeLog[]>([]);
+  const [loanHistory, setLoanHistory] = useState<LoanWithAsset[]>([]);
+  const [depreciation, setDepreciation] = useState<DepreciationInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [showMaintDialog, setShowMaintDialog] = useState(false);
@@ -88,7 +101,7 @@ export function AssetDetail() {
     const fetchData = async () => {
       try {
         const assetId = parseInt(id, 10);
-        const [assetRes, categoriesRes, locationsRes, budgetRes, maintRes, upgradeRes] =
+        const [assetRes, categoriesRes, locationsRes, budgetRes, maintRes, upgradeRes, loanRes, deprRes] =
           await Promise.all([
             assetApi.getById(assetId),
             categoryApi.getAll(),
@@ -96,6 +109,8 @@ export function AssetDetail() {
             budgetSourceApi.getAll(),
             maintenanceLogApi.getByAssetId(assetId),
             upgradeLogApi.getByAssetId(assetId),
+            loanApi.getByAssetId(assetId),
+            assetApi.getDepreciation(assetId).catch(() => ({ data: null })),
           ]);
         setAsset(assetRes.data);
         setCategories(categoriesRes.data);
@@ -103,6 +118,10 @@ export function AssetDetail() {
         setBudgetSources(budgetRes.data);
         setMaintenanceLogs(maintRes.data);
         setUpgradeLogs(upgradeRes.data);
+        setLoanHistory(loanRes.data);
+        if (deprRes.data) {
+          setDepreciation(deprRes.data);
+        }
       } catch {
         toast.error("Failed to fetch asset");
       } finally {
@@ -124,12 +143,20 @@ export function AssetDetail() {
     setDeleteId(null);
   };
 
+  const toISOString = (dateStr: string): string | null => {
+    if (!dateStr) return null;
+    if (dateStr.includes('T')) return dateStr;
+    return `${dateStr}T00:00:00Z`;
+  };
+
   const handleAddMaintenance = async () => {
     if (!asset) return;
     try {
       const res = await maintenanceLogApi.create(asset.id, {
-        ...maintForm,
-        action_date: maintForm.action_date || new Date().toISOString().split("T")[0],
+        description: maintForm.description,
+        technician_name: maintForm.technician_name,
+        cost: maintForm.cost,
+        action_date: toISOString(maintForm.action_date) || new Date().toISOString(),
       });
       setMaintenanceLogs([res.data, ...maintenanceLogs]);
       setShowMaintDialog(false);
@@ -144,8 +171,8 @@ export function AssetDetail() {
     if (!asset) return;
     try {
       const res = await upgradeLogApi.create(asset.id, {
-        ...upgradeForm,
-        upgrade_date: upgradeForm.upgrade_date || new Date().toISOString().split("T")[0],
+        description: upgradeForm.description,
+        upgrade_date: toISOString(upgradeForm.upgrade_date) || new Date().toISOString(),
       });
       setUpgradeLogs([res.data, ...upgradeLogs]);
       setShowUpgradeDialog(false);
@@ -211,6 +238,17 @@ export function AssetDetail() {
     window.open(url, "_blank");
   };
 
+  const handlePrintLabel = () => {
+    if (!asset) return;
+    const url = labelApi.getPdfUrl(asset.id);
+    const printWindow = window.open(url, "_blank");
+    if (printWindow) {
+      printWindow.onload = () => {
+        printWindow.print();
+      };
+    }
+  };
+
   if (loading) {
     return <div className="p-4">Loading...</div>;
   }
@@ -220,29 +258,30 @@ export function AssetDetail() {
   }
 
   return (
-    <div className="space-y-4 p-4">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate({ to: "/assets" })}>
-          <ArrowLeft className="h-4 w-4" />
+    <>
+      <Header fixed>
+        <Button variant='ghost' size='icon' onClick={() => navigate({ to: '/assets' })}>
+          <ArrowLeft className='h-4 w-4' />
         </Button>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold tracking-tight">{asset.name}</h1>
-          <p className="text-muted-foreground font-mono">{asset.code}</p>
+        <div className='flex-1 ms-2'>
+          <h1 className='text-lg font-semibold'>{asset.name}</h1>
+          <p className='text-sm text-muted-foreground font-mono'>{asset.code}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={handleShowQR} disabled={showQRLoading}>
-          <QrCode className="h-4 w-4 mr-2" />
+        <Button variant='outline' size='sm' onClick={handleShowQR} disabled={showQRLoading}>
+          <QrCode className='h-4 w-4 mr-2' />
           QR Code
         </Button>
-        <Button variant="outline" size="sm" onClick={handleDownloadPDF}>
-          <Printer className="h-4 w-4 mr-2" />
+        <Button variant='default' size='sm' onClick={handlePrintLabel}>
+          <Printer className='h-4 w-4 mr-2' />
           Cetak Label
         </Button>
-        <Button variant="destructive" size="sm" onClick={() => setDeleteId(asset.id)}>
-          <Trash2 className="h-4 w-4 mr-2" />
+        <Button variant='destructive' size='sm' onClick={() => setDeleteId(asset.id)}>
+          <Trash2 className='h-4 w-4 mr-2' />
           Delete
         </Button>
-      </div>
+      </Header>
 
+      <Main className='flex flex-1 flex-col gap-4 sm:gap-6 overflow-y-auto'>
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
@@ -285,6 +324,37 @@ export function AssetDetail() {
                 <span>{new Date(asset.warranty_expiry).toLocaleDateString("id-ID")}</span>
               </div>
             )}
+            {depreciation && asset.price && (
+              <>
+                <div className="pt-2 border-t mt-2">
+                  <p className="text-sm font-medium mb-2">Depreciation Info</p>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Current Value</span>
+                    <span className="font-semibold">
+                      Rp {depreciation.current_value.toLocaleString("id-ID")}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Age</span>
+                    <span>{depreciation.age_in_years.toFixed(1)} years</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Remaining Life</span>
+                    <span>{depreciation.remaining_life_years.toFixed(1)} years</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Annual Depreciation</span>
+                    <span>Rp {depreciation.annual_depreciation.toLocaleString("id-ID")}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Status</span>
+                    <Badge className={depreciationStatusLabels[depreciation.status]?.color + " text-white"}>
+                      {depreciationStatusLabels[depreciation.status]?.label}
+                    </Badge>
+                  </div>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -317,8 +387,9 @@ export function AssetDetail() {
 
       <Tabs defaultValue="maintenance" className="mt-6">
         <TabsList>
-          <TabsTrigger value="maintenance">Maintenance History</TabsTrigger>
-          <TabsTrigger value="upgrade">Upgrade History</TabsTrigger>
+          <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
+          <TabsTrigger value="upgrade">Upgrade</TabsTrigger>
+          <TabsTrigger value="loans">Peminjaman ({loanHistory.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="maintenance" className="space-y-4">
@@ -406,7 +477,65 @@ export function AssetDetail() {
             </Table>
           </div>
         </TabsContent>
+
+        <TabsContent value="loans" className="space-y-4">
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Peminjam</TableHead>
+                  <TableHead>Tanggal Pinjam</TableHead>
+                  <TableHead>Jatuh Tempo</TableHead>
+                  <TableHead>Tanggal Kembali</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Kondisi Pinjam</TableHead>
+                  <TableHead>Kondisi Kembali</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loanHistory.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center">
+                      No loan history
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  loanHistory.map((loan) => (
+                    <TableRow key={loan.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{loan.borrower_name}</p>
+                          {loan.borrower_contact && (
+                            <p className="text-xs text-muted-foreground">{loan.borrower_contact}</p>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>{new Date(loan.loan_date).toLocaleDateString("id-ID")}</TableCell>
+                      <TableCell>{new Date(loan.due_date).toLocaleDateString("id-ID")}</TableCell>
+                      <TableCell>
+                        {loan.return_date ? new Date(loan.return_date).toLocaleDateString("id-ID") : "-"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={
+                          loan.status === "RETURNED" ? "bg-green-500" :
+                          loan.status === "OVERDUE" ? "bg-red-500" :
+                          "bg-blue-500"
+                        }>
+                          {loan.status === "BORROWED" ? "Dipinjam" :
+                           loan.status === "OVERDUE" ? "Terlambat" : "Dikembalikan"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{loan.condition_at_loan}</TableCell>
+                      <TableCell>{loan.condition_at_return || "-"}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
       </Tabs>
+      </Main>
 
       <AlertDialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
@@ -515,10 +644,19 @@ export function AssetDetail() {
                 <p className="text-sm text-muted-foreground mt-4 text-center">
                   Scan QR code untuk melihat detail aset
                 </p>
-                <Button variant="outline" className="mt-4" onClick={handleDownloadPDF}>
-                  <Printer className="h-4 w-4 mr-2" />
-                  Cetak Label
-                </Button>
+                <p className="text-xs text-muted-foreground mt-1">
+                  atau buka: {window.location.origin}/public/asset/{asset?.id}
+                </p>
+                <div className="flex gap-2 mt-4">
+                  <Button variant="outline" onClick={handleDownloadPDF}>
+                    <Printer className="h-4 w-4 mr-2" />
+                    Download PDF
+                  </Button>
+                  <Button onClick={handlePrintLabel}>
+                    <Printer className="h-4 w-4 mr-2" />
+                    Print Langsung
+                  </Button>
+                </div>
               </>
             ) : (
               <p>Generating QR code...</p>
@@ -526,6 +664,6 @@ export function AssetDetail() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

@@ -36,7 +36,7 @@ export function MasterDataPage({
   description,
 }: MasterDataPageProps) {
   return (
-    <div className="space-y-4">
+    <div className='flex flex-1 flex-col gap-4'>
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
@@ -50,8 +50,8 @@ export function MasterDataPage({
         </Button>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
+      <div className='overflow-hidden rounded-md border flex-1'>
+        <Table className='min-w-xl'>
           <TableHeader>
             <TableRow>
               <TableHead>ID</TableHead>
@@ -63,8 +63,8 @@ export function MasterDataPage({
           <TableBody>
             {items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center">
-                  No {title.toLowerCase()} found
+                <TableCell colSpan={4} className="h-24 text-center">
+                  No {title.toLowerCase()} found.
                 </TableCell>
               </TableRow>
             ) : (

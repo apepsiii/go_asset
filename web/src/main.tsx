@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 import { AxiosError } from 'axios'
+import { ClerkProvider } from '@clerk/react'
 import {
   QueryClient,
   QueryClientProvider,
@@ -13,6 +14,8 @@ import { FontProvider } from './context/font-provider'
 import { ThemeProvider } from './context/theme-provider'
 import { routeTree } from './routeTree.gen'
 import './styles/index.css'
+
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -60,15 +63,17 @@ if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement)
   root.render(
     <StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <FontProvider>
-            <DirectionProvider>
-              <RouterProvider router={router} />
-            </DirectionProvider>
-          </FontProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
+      <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl='/sign-in'>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider>
+            <FontProvider>
+              <DirectionProvider>
+                <RouterProvider router={router} />
+              </DirectionProvider>
+            </FontProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </ClerkProvider>
     </StrictMode>,
   )
 }

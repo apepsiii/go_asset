@@ -1,97 +1,71 @@
 package handler
 
 import (
-	"database/sql"
+	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/labstack/echo/v5"
-	"lab-asset-manager/internal/models"
-	"lab-asset-manager/internal/repository"
+	"lab-asset-manager/internal/middleware"
+	"lab-asset-manager/internal/service"
 )
 
-type LocationHandler struct{}
+type LocationHandler struct {
+	svc *service.LocationService
+}
 
 func NewLocationHandler() *LocationHandler {
-	return &LocationHandler{}
+	return &LocationHandler{svc: service.NewLocationService()}
 }
 
 func (h *LocationHandler) GetAll(c *echo.Context) error {
-	rows, err := repository.DB.Query("SELECT id, name, created_at FROM locations")
+	items, err := h.svc.GetAll()
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
-	defer rows.Close()
-
-	var items []models.Location
-	for rows.Next() {
-		var item models.Location
-		if err := rows.Scan(&item.ID, &item.Name, &item.CreatedAt); err != nil {
-			continue
-		}
-		items = append(items, item)
-	}
-
-	if items == nil {
-		items = []models.Location{}
-	}
-
 	return c.JSON(http.StatusOK, items)
 }
 
 func (h *LocationHandler) GetByID(c *echo.Context) error {
 	id := c.Param("id")
-	var item models.Location
-	err := repository.DB.QueryRow(
-		"SELECT id, name, created_at FROM locations WHERE id = ?",
-		id,
-	).Scan(&item.ID, &item.Name, &item.CreatedAt)
-
-	if err == sql.ErrNoRows {
-		return c.JSON(http.StatusNotFound, map[string]string{"error": "not found"})
-	}
+	item, err := h.svc.GetByID(id)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
 	}
-
 	return c.JSON(http.StatusOK, item)
 }
 
 func (h *LocationHandler) Create(c *echo.Context) error {
-	var item models.Location
-	if err := c.Bind(&item); err != nil {
+	var input struct {
+		Name string `json:"name"`
+	}
+	if err := c.Bind(&input); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
-	result, err := repository.DB.Exec(
-		"INSERT INTO locations (name) VALUES (?)",
-		item.Name,
-	)
+	item, err := h.svc.Create(input.Name)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
-	id, _ := result.LastInsertId()
-	item.ID = id
-	item.CreatedAt = time.Now()
+	go service.RecordAudit(middleware.GetUserID(c), string(service.AuditCreate), "location", fmt.Sprint(item.ID), item, c.RealIP())
 
 	return c.JSON(http.StatusCreated, item)
 }
 
 func (h *LocationHandler) Update(c *echo.Context) error {
 	id := c.Param("id")
-	var item models.Location
-	if err := c.Bind(&item); err != nil {
+	var input struct {
+		Name string `json:"name"`
+	}
+	if err := c.Bind(&input); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
-	_, err := repository.DB.Exec(
-		"UPDATE locations SET name = ? WHERE id = ?",
-		item.Name, id,
-	)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	if err := h.svc.Update(id, input.Name); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
+
+	go service.RecordAudit(middleware.GetUserID(c), string(service.AuditUpdate), "location", id, input, c.RealIP())
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "updated"})
 }
@@ -99,10 +73,11 @@ func (h *LocationHandler) Update(c *echo.Context) error {
 func (h *LocationHandler) Delete(c *echo.Context) error {
 	id := c.Param("id")
 
-	_, err := repository.DB.Exec("DELETE FROM locations WHERE id = ?", id)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	if err := h.svc.Delete(id); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
+
+	go service.RecordAudit(middleware.GetUserID(c), string(service.AuditDelete), "location", id, nil, c.RealIP())
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "deleted"})
 }

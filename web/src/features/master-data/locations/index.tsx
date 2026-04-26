@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { MapPin } from "lucide-react";
+import { ConfigDrawer } from "@/components/config-drawer";
+import { Header } from "@/components/layout/header";
+import { Main } from "@/components/layout/main";
+import { ProfileDropdown } from "@/components/profile-dropdown";
+import { Search } from "@/components/search";
+import { ThemeSwitch } from "@/components/theme-switch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -73,15 +79,24 @@ export function Locations() {
 
   return (
     <>
-      <MasterDataPage
-        title="Locations"
-        items={items}
-        onAdd={() => setOpen(true)}
-        onEdit={handleEdit}
-        onDelete={setDeleteId}
-        icon={<MapPin className="h-6 w-6" />}
-        description="Manage asset locations (Lab 1, Lab 2, Ruang Server, etc.)"
-      />
+      <Header fixed>
+        <Search className='me-auto' />
+        <ThemeSwitch />
+        <ConfigDrawer />
+        <ProfileDropdown />
+      </Header>
+
+      <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
+        <MasterDataPage
+          title="Locations"
+          items={items}
+          onAdd={() => setOpen(true)}
+          onEdit={handleEdit}
+          onDelete={setDeleteId}
+          icon={<MapPin className="h-6 w-6" />}
+          description="Manage asset locations (Lab 1, Lab 2, Ruang Server, etc.)"
+        />
+      </Main>
 
       <LocationsDialogs
         open={open}

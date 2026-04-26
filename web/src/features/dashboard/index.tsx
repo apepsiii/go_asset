@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Archive, CheckCircle, AlertTriangle, XCircle, Wrench } from "lucide-react";
+import { Archive, CheckCircle, AlertTriangle, XCircle, Wrench, ArrowLeftRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { statsApi, type DashboardStats } from "@/lib/api";
+import { statsApi, loanApi, type DashboardStats, type LoanStats } from "@/lib/api";
 import {
   PieChart,
   Pie,
@@ -16,18 +16,24 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import { Link } from "@tanstack/react-router";
 
 const COLORS = ["#22c55e", "#eab308", "#ef4444", "#3b82f6"];
 
 export function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loanStats, setLoanStats] = useState<LoanStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await statsApi.getDashboard();
-        setStats(res.data);
+        const [statsRes, loanRes] = await Promise.all([
+          statsApi.getDashboard(),
+          loanApi.getStats(),
+        ]);
+        setStats(statsRes.data);
+        setLoanStats(loanRes.data);
       } catch {
         toast.error("Failed to fetch dashboard stats");
       } finally {
@@ -72,7 +78,7 @@ export function Dashboard() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Assets</CardTitle>
@@ -134,6 +140,64 @@ export function Dashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Loan Summary Cards */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Sedang Dipinjam</CardTitle>
+            <ArrowLeftRight className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-500">{loanStats?.active ?? 0}</div>
+            <p className="text-xs text-muted-foreground">units on loan</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Terlambat</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-500">{loanStats?.overdue ?? 0}</div>
+            <p className="text-xs text-muted-foreground">units overdue</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Selesai</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-500">{loanStats?.returned ?? 0}</div>
+            <p className="text-xs text-muted-foreground">units returned</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Tersedia</CardTitle>
+            <Archive className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{loanStats?.available ?? 0}</div>
+            <p className="text-xs text-muted-foreground">of {loanStats?.total_assets ?? 0} units</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Loan Link */}
+      <div className="flex justify-end">
+        <Link
+          to="/loans"
+          className="text-sm text-primary hover:underline flex items-center gap-1"
+        >
+          <ArrowLeftRight className="h-4 w-4" />
+          Kelola Peminjaman
+        </Link>
+      </div>
 
       {/* Charts */}
       <div className="grid gap-6 lg:grid-cols-2">
@@ -233,6 +297,46 @@ export function Dashboard() {
                     name="Value (Rp)"
                   />
                 </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Loan Status Distribution */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Loan Status Overview</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: "Dipinjam", value: loanStats?.active ?? 0, color: "#3b82f6" },
+                      { name: "Terlambat", value: loanStats?.overdue ?? 0, color: "#ef4444" },
+                      { name: "Dikembalikan", value: loanStats?.returned ?? 0, color: "#22c55e" },
+                    ].filter((d) => d.value > 0)}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, percent }) =>
+                      `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`
+                    }
+                  >
+                    {[
+                      { name: "Dipinjam", value: loanStats?.active ?? 0, color: "#3b82f6" },
+                      { name: "Terlambat", value: loanStats?.overdue ?? 0, color: "#ef4444" },
+                      { name: "Dikembalikan", value: loanStats?.returned ?? 0, color: "#22c55e" },
+                    ].map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
               </ResponsiveContainer>
             </div>
           </CardContent>

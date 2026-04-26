@@ -36,7 +36,11 @@ func (h *LabelHandler) GeneratePDF(c *echo.Context) error {
 		return c.JSON(http.StatusNotFound, map[string]string{"error": "Asset not found"})
 	}
 
-	pdf := gofpdf.New("L", "mm", "A7", "")
+	pdf := gofpdf.NewCustom(&gofpdf.InitType{
+		OrientationStr: "L",
+		UnitStr:        "mm",
+		Size:           gofpdf.SizeType{Wd: 105, Ht: 74}, // A7 landscape: 105mm wide x 74mm tall
+	})
 	pdf.SetMargins(5, 5, 5)
 	pdf.AddPage()
 
@@ -54,10 +58,15 @@ func (h *LabelHandler) GeneratePDF(c *echo.Context) error {
 	pdf.CellFormat(0, 6, "Code: "+code, "", 1, "C", false, 0, "")
 	pdf.Ln(3)
 
-	qrURL := "http://localhost:5173/public/asset/" + assetID
+	publicURL := os.Getenv("PUBLIC_URL")
+	if publicURL == "" {
+		publicURL = "http://localhost:5173"
+	}
+	qrURL := publicURL + "/public/asset/" + assetID
 	qrPng, err := qrcode.Encode(qrURL, qrcode.Medium, 128)
 	if err == nil {
-		qrFile := fmt.Sprintf("/tmp/qr-%s.png", code)
+		tmpDir := os.TempDir()
+		qrFile := fmt.Sprintf("%s/qr-%s.png", tmpDir, code)
 		os.WriteFile(qrFile, qrPng, 0644)
 		pdf.Image(qrFile, 60, pdf.GetY(), 35, 35, false, "", 0, "")
 		os.Remove(qrFile)

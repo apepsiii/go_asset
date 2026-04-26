@@ -1,157 +1,67 @@
 package handler
 
 import (
-	"database/sql"
+	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/labstack/echo/v5"
-	"lab-asset-manager/internal/models"
-	"lab-asset-manager/internal/repository"
+	"lab-asset-manager/internal/middleware"
+	"lab-asset-manager/internal/service"
 )
 
-type AssetHandler struct{}
+type AssetHandler struct {
+	svc *service.AssetService
+}
 
 func NewAssetHandler() *AssetHandler {
-	return &AssetHandler{}
+	return &AssetHandler{svc: service.NewAssetService()}
 }
 
 func (h *AssetHandler) GetAll(c *echo.Context) error {
-	rows, err := repository.DB.Query(`
-		SELECT id, category_id, budget_source_id, location_id, code, name, 
-		       specification, photo_url, condition, purchase_date, price, 
-		       warranty_expiry, created_at, updated_at 
-		FROM assets
-	`)
+	items, err := h.svc.GetAll()
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
-	defer rows.Close()
-
-	var assets []models.Asset
-	for rows.Next() {
-		var a models.Asset
-		var purchaseDate, warrantyExpiry sql.NullTime
-		var spec, photoURL sql.NullString
-
-		if err := rows.Scan(
-			&a.ID, &a.CategoryID, &a.BudgetSourceID, &a.LocationID,
-			&a.Code, &a.Name, &spec, &photoURL, &a.Condition,
-			&purchaseDate, &a.Price, &warrantyExpiry, &a.CreatedAt, &a.UpdatedAt,
-		); err != nil {
-			continue
-		}
-
-		if spec.Valid {
-			a.Specification = spec.String
-		}
-		if photoURL.Valid {
-			a.PhotoURL = photoURL.String
-		}
-		if purchaseDate.Valid {
-			a.PurchaseDate = &purchaseDate.Time
-		}
-		if warrantyExpiry.Valid {
-			a.WarrantyExpiry = &warrantyExpiry.Time
-		}
-
-		assets = append(assets, a)
-	}
-
-	if assets == nil {
-		assets = []models.Asset{}
-	}
-
-	return c.JSON(http.StatusOK, assets)
+	return c.JSON(http.StatusOK, items)
 }
 
 func (h *AssetHandler) GetByID(c *echo.Context) error {
 	id := c.Param("id")
-	var a models.Asset
-	var purchaseDate, warrantyExpiry sql.NullTime
-	var spec, photoURL sql.NullString
-
-	err := repository.DB.QueryRow(`
-		SELECT id, category_id, budget_source_id, location_id, code, name, 
-		       specification, photo_url, condition, purchase_date, price, 
-		       warranty_expiry, created_at, updated_at 
-		FROM assets WHERE id = ?
-	`, id).Scan(
-		&a.ID, &a.CategoryID, &a.BudgetSourceID, &a.LocationID,
-		&a.Code, &a.Name, &spec, &photoURL, &a.Condition,
-		&purchaseDate, &a.Price, &warrantyExpiry, &a.CreatedAt, &a.UpdatedAt,
-	)
-
-	if err == sql.ErrNoRows {
-		return c.JSON(http.StatusNotFound, map[string]string{"error": "not found"})
-	}
+	item, err := h.svc.GetByID(id)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
 	}
-
-	if spec.Valid {
-		a.Specification = spec.String
-	}
-	if photoURL.Valid {
-		a.PhotoURL = photoURL.String
-	}
-	if purchaseDate.Valid {
-		a.PurchaseDate = &purchaseDate.Time
-	}
-	if warrantyExpiry.Valid {
-		a.WarrantyExpiry = &warrantyExpiry.Time
-	}
-
-	return c.JSON(http.StatusOK, a)
+	return c.JSON(http.StatusOK, item)
 }
 
 func (h *AssetHandler) Create(c *echo.Context) error {
-	var a models.Asset
-	if err := c.Bind(&a); err != nil {
+	var input service.CreateAssetInput
+	if err := c.Bind(&input); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
-	now := time.Now()
-	result, err := repository.DB.Exec(`
-		INSERT INTO assets (category_id, budget_source_id, location_id, code, name, 
-		                     specification, photo_url, condition, purchase_date, price, warranty_expiry)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`,
-		a.CategoryID, a.BudgetSourceID, a.LocationID, a.Code, a.Name,
-		a.Specification, a.PhotoURL, a.Condition, a.PurchaseDate, a.Price, a.WarrantyExpiry,
-	)
+	item, err := h.svc.Create(input)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
-	id, _ := result.LastInsertId()
-	a.ID = id
-	a.CreatedAt = now
-	a.UpdatedAt = now
+	go service.RecordAudit(middleware.GetUserID(c), string(service.AuditCreate), "asset", fmt.Sprint(item.ID), input, c.RealIP())
 
-	return c.JSON(http.StatusCreated, a)
+	return c.JSON(http.StatusCreated, item)
 }
 
 func (h *AssetHandler) Update(c *echo.Context) error {
 	id := c.Param("id")
-	var a models.Asset
-	if err := c.Bind(&a); err != nil {
+	var input service.UpdateAssetInput
+	if err := c.Bind(&input); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
-	_, err := repository.DB.Exec(`
-		UPDATE assets SET category_id = ?, budget_source_id = ?, location_id = ?,
-		                  code = ?, name = ?, specification = ?, photo_url = ?,
-		                  condition = ?, purchase_date = ?, price = ?, warranty_expiry = ?
-		WHERE id = ?
-	`,
-		a.CategoryID, a.BudgetSourceID, a.LocationID, a.Code, a.Name,
-		a.Specification, a.PhotoURL, a.Condition, a.PurchaseDate, a.Price, a.WarrantyExpiry,
-		id,
-	)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	if err := h.svc.Update(id, input); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
+
+	go service.RecordAudit(middleware.GetUserID(c), string(service.AuditUpdate), "asset", id, input, c.RealIP())
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "updated"})
 }
@@ -159,10 +69,11 @@ func (h *AssetHandler) Update(c *echo.Context) error {
 func (h *AssetHandler) Delete(c *echo.Context) error {
 	id := c.Param("id")
 
-	_, err := repository.DB.Exec("DELETE FROM assets WHERE id = ?", id)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	if err := h.svc.Delete(id); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
+
+	go service.RecordAudit(middleware.GetUserID(c), string(service.AuditDelete), "asset", id, nil, c.RealIP())
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "deleted"})
 }

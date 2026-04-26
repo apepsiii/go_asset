@@ -9,6 +9,50 @@ const api = axios.create({
   },
 });
 
+api.interceptors.request.use(async (config) => {
+  try {
+    const clerk = await import("@clerk/react");
+    // Try to get token using getAuth() or from window.__clerk
+    let token = null;
+    
+    if (clerk.useAuth) {
+      // Clerk is loaded, try to get token from window if available
+      const clerkWindow = (window as any).__clerk;
+      if (clerkWindow?.client?.sessions?.length > 0) {
+        const session = clerkWindow.client.sessions[0];
+        // Use the session's token
+        token = session.token?.jwt || null;
+      }
+    }
+    
+    if (!token && clerk.getToken) {
+      try {
+        token = await clerk.getToken();
+      } catch {
+        // getToken might not work outside component context
+      }
+    }
+    
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  } catch (e) {
+    // Clerk not available or error
+    console.debug("Clerk not available for auth:", e);
+  }
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      window.location.href = "/sign-in";
+    }
+    return Promise.reject(error);
+  }
+);
+
 export interface Category {
   id: number;
   name: string;
@@ -35,11 +79,14 @@ export interface Asset {
   code: string;
   name: string;
   specification: string;
+  specifications: string;
   photo_url: string;
   condition: "OK" | "RUSAK_RINGAN" | "RUSAK_TOTAL" | "MAINTENANCE";
   purchase_date: string | null;
   price: number | null;
   warranty_expiry: string | null;
+  useful_life_years: number;
+  salvage_value: number;
   created_at: string;
   updated_at: string;
 }
@@ -88,6 +135,97 @@ export interface BudgetStat {
   total_value: number;
 }
 
+export interface WarrantyAlert {
+  asset: Asset;
+  days_remaining: number;
+}
+
+export interface BrokenAssetAlert {
+  asset: Asset;
+  maintenance_count: number;
+  last_maintenance: string | null;
+}
+
+export interface NotificationSummary {
+  warranty_expiring: WarrantyAlert[];
+  broken_assets: BrokenAssetAlert[];
+  total_ok: number;
+  total_broken: number;
+}
+
+export interface AuditLog {
+  id: number;
+  user_id: string;
+  action: string;
+  resource: string;
+  resource_id: string;
+  details: string;
+  ip_address: string;
+  created_at: string;
+}
+
+export interface ImportResult {
+  total: number;
+  success: number;
+  failed: number;
+  errors: string[];
+}
+
+export interface Loan {
+  id: number;
+  asset_id: number;
+  borrower_name: string;
+  borrower_contact: string;
+  loan_date: string;
+  due_date: string;
+  return_date: string | null;
+  status: "BORROWED" | "RETURNED" | "OVERDUE";
+  condition_at_loan: string;
+  condition_at_return: string;
+  notes: string;
+  loaner_id: string;
+  created_at: string;
+}
+
+export interface LoanWithAsset extends Loan {
+  asset_code: string;
+  asset_name: string;
+}
+
+export interface LoanStats {
+  active: number;
+  overdue: number;
+  returned: number;
+  available: number;
+  total_assets: number;
+}
+
+export interface DepreciationInfo {
+  asset_id: number;
+  asset_code: string;
+  asset_name: string;
+  purchase_price: number;
+  current_value: number;
+  salvage_value: number;
+  useful_life_years: number;
+  age_in_years: number;
+  annual_depreciation: number;
+  accumulated_depreciation: number;
+  remaining_life_years: number;
+  status: "healthy" | "depreciated" | "fully_depreciated";
+}
+
+export interface DepreciationSummary {
+  total_assets: number;
+  total_purchase_value: number;
+  total_current_value: number;
+  total_depreciation: number;
+  healthy_count: number;
+  depreciated_count: number;
+  fully_depreciated_count: number;
+  assets: DepreciationInfo[];
+}
+
 export const categoryApi = {
   getAll: () => api.get<Category[]>("/api/categories"),
   getById: (id: number) => api.get<Category>(`/api/categories/${id}`),
@@ -124,6 +262,18 @@ export const assetApi = {
   update: (id: number, data: Partial<Asset>) =>
     api.put<Asset>(`/api/assets/${id}`, data),
   delete: (id: number) => api.delete(`/api/assets/${id}`),
+  bulkUpdateCondition: (assetIds: number[], condition: string) =>
+    api.post("/api/assets/bulk/update-condition", { asset_ids: assetIds, condition }),
+  bulkDelete: (assetIds: number[]) =>
+    api.post("/api/assets/bulk/delete", { asset_ids: assetIds }),
+  bulkUpdateLocation: (assetIds: number[], locationId: number) =>
+    api.post("/api/assets/bulk/update-location", { asset_ids: assetIds, location_id: locationId }),
+  getDepreciation: (id: number) =>
+    api.get<DepreciationInfo>(`/api/assets/${id}/depreciation`),
+  getAllDepreciations: () =>
+    api.get<DepreciationSummary>("/api/depreciations"),
+  generateCode: (categoryId: number) =>
+    api.get<{ code: string }>(`/api/assets/generate-code?category_id=${categoryId}`),
 };
 
 export const uploadApi = {
@@ -165,6 +315,85 @@ export const labelApi = {
 
 export const statsApi = {
   getDashboard: () => api.get<DashboardStats>("/api/stats/dashboard"),
+};
+
+export const auditLogApi = {
+  getAll: (resource?: string) =>
+    api.get<AuditLog[]>("/api/audit-logs", { params: resource ? { resource } : {} }),
+};
+
+export const notificationApi = {
+  getSummary: (warrantyDays = 30) =>
+    api.get<NotificationSummary>("/api/notifications/summary", {
+      params: { warranty_days: warrantyDays },
+    }),
+  getWarrantyAlerts: (days = 30) =>
+    api.get<WarrantyAlert[]>("/api/notifications/warranty", {
+      params: { days },
+    }),
+  getBrokenAssets: () =>
+    api.get<BrokenAssetAlert[]>("/api/notifications/broken-assets"),
+};
+
+export const exportApi = {
+  getCsvUrl: () => `${API_BASE_URL}/api/export/assets/csv`,
+};
+
+export const importApi = {
+  importCsv: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return api.post<ImportResult>("/api/import/assets/csv", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+};
+
+export const loanApi = {
+  create: (data: {
+    asset_id: number;
+    borrower_name: string;
+    borrower_contact?: string;
+    loan_date: string;
+    due_date: string;
+    condition_at_loan?: string;
+    notes?: string;
+  }) => api.post<LoanWithAsset>("/api/loans", data),
+
+  getAll: (params?: { status?: string; asset_id?: string; limit?: number }) =>
+    api.get<LoanWithAsset[]>("/api/loans", { params }),
+
+  getById: (id: number) => api.get<LoanWithAsset>(`/api/loans/${id}`),
+
+  return: (id: number, data: {
+    return_date?: string;
+    condition_at_return?: string;
+    notes?: string;
+  }) => api.put<LoanWithAsset>(`/api/loans/${id}/return`, data),
+
+  getActive: () => api.get<LoanWithAsset[]>("/api/loans/active"),
+
+  getOverdue: () => api.get<LoanWithAsset[]>("/api/loans/overdue"),
+
+  getAvailableAssets: () => api.get<Asset[]>("/api/assets/available"),
+
+  getStats: () => api.get<LoanStats>("/api/loans/stats"),
+
+  getByAssetId: (assetId: number) =>
+    api.get<LoanWithAsset[]>("/api/loans", { params: { asset_id: assetId.toString() } }),
+};
+
+export interface CurrentUser {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  image_url: string;
+  role: "admin" | "user";
+}
+
+export const userApi = {
+  getCurrentUser: () => api.get<CurrentUser>("/api/me"),
 };
 
 export default api;
