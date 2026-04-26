@@ -80,8 +80,12 @@
 @keyframes slideUp {
   from {
     height: var(--radix-collapsible-content-height);
-  }
   to {
     height: 0;
   }
+}
+
+/* Hide Clerk sign-up footer */
+.cl-footer {
+  display: none !important;
 }
