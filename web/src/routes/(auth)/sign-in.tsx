@@ -16,7 +16,16 @@ export const Route = createFileRoute('/(auth)/sign-in')({
 function SignInPage() {
   return (
     <AuthLayout>
-      <SignIn fallback={<Skeleton className='h-120 w-100' />} />
+      <SignIn
+        fallback={<Skeleton className='h-120 w-100' />}
+        appearance={{
+          elements: {
+            footer: {
+              display: 'none',
+            },
+          },
+        }}
+      />
     </AuthLayout>
   )
 }
