@@ -1,9 +1,8 @@
 @echo off
 REM ============================================================
-REM LabAsset Manager - Build Server Binary Only
+REM LabAsset Manager - Build Server Binary with Version
 REM ============================================================
-REM This script builds ONLY the Go binary (no React build)
-REM Use this if React is already built
+REM Output format: go_asset_v{major}_{minor}_{YYMMDD}.exe
 REM ============================================================
 
 echo Building LabAsset Manager Server Binary...
@@ -17,6 +16,37 @@ if %ERRORLEVEL% neq 0 (
     pause
     exit /b 1
 )
+
+REM Get version from .env
+set MAJOR=1
+set MINOR=0
+set VERSION_DATE=260429
+
+REM Read from .env if exists
+if exist ".env" (
+    for /f "usebackq tokens=1,2 delims==" %%a in (.env) do (
+        if "%%a"=="APP_VERSION_MAJOR" set MAJOR=%%b
+        if "%%a"=="APP_VERSION_MINOR" set MINOR=%%b
+    )
+)
+
+REM Get current date in YYMMDD format
+for /f "tokens=2 delims==" %%a in ('wmic OS Get localdatetime /value') do (
+    set DATETIME=%%a
+)
+set VERSION_DATE=%DATETIME:~2,2%%DATETIME:~5,2%%DATETIME:~8,2%
+
+REM Set output filename
+set OUTPUT_NAME=go_asset_v%MAJOR%_%MINOR%_%VERSION_DATE%.exe
+
+echo ========================================================
+echo   Build Configuration
+echo ========================================================
+echo   Version: %MAJOR%.%MINOR%
+echo   Date:    %VERSION_DATE%
+echo   Output:  %OUTPUT_NAME%
+echo ========================================================
+echo.
 
 REM Create server directory
 if not exist "cmd\server" mkdir cmd\server
@@ -46,6 +76,12 @@ import (
 	\"lab-asset-manager/internal/repository\"
 )
 
+var (
+	AppVersionMajor = \"1\"
+	AppVersionMinor = \"0\"
+	AppName = \"LabAsset-Manager\"
+)
+
 //go:embed all:dist
 var staticFiles embed.FS
 
@@ -54,6 +90,15 @@ func main() {
 	if err != nil {
 		log.Println(\"Note: .env file not found\")
 	}
+
+	if v := os.Getenv(\"APP_VERSION_MAJOR\"); v != \"\" {
+		AppVersionMajor = v
+	}
+	if v := os.Getenv(\"APP_VERSION_MINOR\"); v != \"\" {
+		AppVersionMinor = v
+	}
+
+	log.Printf(\"=== %s v%s.%s ===\", AppName, AppVersionMajor, AppVersionMinor)
 
 	dbPath := os.Getenv(\"DB_PATH\")
 	if dbPath == \"\" {
@@ -103,8 +148,9 @@ func main() {
 	serveStatic(e)
 	e.Static(\"/uploads\", \"./uploads\")
 
-	log.Printf(\"LabAsset Manager starting on port %s\", port)
+	log.Printf(\"Server starting on port %s\", port)
 	log.Printf(\"Database: %s\", dbPath)
+	log.Printf(\"Access: http://localhost:%s\", port)
 	e.Start(\":\" + port)
 }
 
@@ -249,8 +295,11 @@ func runWizard() {
 \$mainGo | Out-File -FilePath \"cmd\server\main.go\" -Encoding UTF8
 "@
 
-echo Building Go binary...
-go build -ldflags="-s -w" -o lab-asset-manager.exe ./cmd/server
+echo.
+echo Building Go binary to: %OUTPUT_NAME%
+echo.
+
+go build -ldflags="-s -w" -o %OUTPUT_NAME% ./cmd/server
 
 if %ERRORLEVEL% neq 0 (
     echo.
@@ -267,6 +316,13 @@ echo ========================================================
 echo   Build Successful!
 echo ========================================================
 echo.
-echo Binary: lab-asset-manager.exe
+echo Output: %OUTPUT_NAME%
+echo Size:  (check file properties)
+echo.
+echo Next steps:
+echo 1. Copy %OUTPUT_NAME% to deployment folder
+echo 2. Create dist folder and copy React build
+echo 3. Create data folder: mkdir data
+echo 4. Run: %OUTPUT_NAME%
 echo.
 pause

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -14,12 +15,28 @@ import (
 	"lab-asset-manager/internal/repository"
 )
 
+var (
+	AppVersionMajor = "1"
+	AppVersionMinor = "0"
+	AppName = "LabAsset-Manager"
+)
+
 func main() {
 	// Load .env file
 	err := godotenv.Load()
 	if err != nil {
 		log.Println("Warning: .env file not found, using system environment variables")
 	}
+
+	// Read version from environment
+	if v := os.Getenv("APP_VERSION_MAJOR"); v != "" {
+		AppVersionMajor = v
+	}
+	if v := os.Getenv("APP_VERSION_MINOR"); v != "" {
+		AppVersionMinor = v
+	}
+
+	log.Printf("=== %s v%s.%s ===", AppName, AppVersionMajor, AppVersionMinor)
 
 	// Log environment status for debugging
 	if os.Getenv("ALLOW_UNAUTHENTICATED") == "1" {
@@ -185,7 +202,13 @@ func main() {
 	}
 
 	log.Printf("Server starting on port %s", port)
+	log.Printf("Database: %s", dbPath)
+	log.Printf("Access: http://localhost:%s", port)
 	if err := e.Start(":" + port); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func getVersion() string {
+	return fmt.Sprintf("%s.%s", AppVersionMajor, AppVersionMinor)
 }
