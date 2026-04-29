@@ -1,1 +1,0 @@
-import{r as e}from"./rolldown-runtime-S-ySWqyJ.js";import{t}from"./jsx-runtime-CGgIkkjv.js";import{t as n}from"./asset-form-7WGSn6_1.js";var r=e(t()),i=()=>(0,r.jsx)(n,{mode:`create`});export{i as component};
