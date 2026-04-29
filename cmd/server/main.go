@@ -18,7 +18,7 @@ import (
 	"lab-asset-manager/internal/repository"
 )
 
-//go:embed all:dist
+//go:embed dist/*
 var staticFiles embed.FS
 
 func main() {
@@ -57,7 +57,6 @@ func main() {
 	defer repository.CloseDB()
 
 	e := echo.New()
-	e.HideBanner = true
 
 	e.Use(echoMiddleware.Recover())
 	e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
@@ -66,7 +65,7 @@ func main() {
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 	}))
 
-	e.GET("/api/health", func(c echo.Context) error {
+	e.GET("/api/health", func(c *echo.Context) error {
 		return c.JSON(200, map[string]string{"status": "ok"})
 	})
 
@@ -101,8 +100,8 @@ func main() {
 	e.GET("/settings/*", echo.WrapHandler(http.StripPrefix("/settings/", http.FileServer(getFileSystem()))))
 	e.GET("/public/*", echo.WrapHandler(http.StripPrefix("/public/", http.FileServer(getFileSystem()))))
 
-	e.GET("/*", func(c echo.Context) error {
-		path := c.PathParam("*")
+	e.GET("/*", func(c *echo.Context) error {
+		path := c.Param("*")
 		if path == "" || path == "/" {
 			content, err := staticFiles.ReadFile("dist/index.html")
 			if err != nil {
@@ -275,6 +274,11 @@ func runWizard() {
 	clerkKey := promptInput("Enter Clerk Secret Key (optional)", "")
 	allowUnauth := promptInput("Allow unauthenticated access? (yes/no)", "no")
 
+	fmt.Println()
+	fmt.Println("Installing...")
+
+	// Step 1: Create .env file
+	fmt.Print("  [1/4] Creating configuration file (.env)... ")
 	envContent := fmt.Sprintf("PORT=%s\nDB_PATH=%s\n", port, dbPath)
 	if clerkKey != "" {
 		envContent += fmt.Sprintf("CLERK_SECRET_KEY=%s\n", clerkKey)
@@ -285,29 +289,72 @@ func runWizard() {
 
 	err := os.WriteFile(".env", []byte(envContent), 0644)
 	if err != nil {
-		log.Fatal("Failed to write .env file:", err)
+		fmt.Printf("FAILED!\n")
+		fmt.Printf("  Error: Failed to write .env file: %v\n", err)
+		fmt.Println()
+		fmt.Println("========================================================")
+		fmt.Println("          Installation FAILED!")
+		fmt.Println("========================================================")
+		fmt.Println()
+		os.Exit(1)
 	}
+	fmt.Println("OK")
 
+	// Step 2: Create data directory
+	fmt.Print("  [2/4] Creating data directory... ")
 	dir := filepath.Dir(dbPath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		log.Fatal("Failed to create data directory:", err)
+		fmt.Printf("FAILED!\n")
+		fmt.Printf("  Error: Failed to create directory: %v\n", err)
+		fmt.Println()
+		fmt.Println("========================================================")
+		fmt.Println("          Installation FAILED!")
+		fmt.Println("========================================================")
+		fmt.Println()
+		os.Exit(1)
 	}
+	fmt.Println("OK")
 
+	// Step 3: Initialize database
+	fmt.Print("  [3/4] Initializing database... ")
 	if err := repository.InitDB(dbPath); err != nil {
-		log.Fatal("Failed to initialize database:", err)
+		fmt.Printf("FAILED!\n")
+		fmt.Printf("  Error: Failed to initialize database: %v\n", err)
+		fmt.Println()
+		fmt.Println("========================================================")
+		fmt.Println("          Installation FAILED!")
+		fmt.Println("========================================================")
+		fmt.Println()
+		os.Exit(1)
 	}
 	defer repository.CloseDB()
+	fmt.Println("OK")
+
+	// Step 4: Verify installation
+	fmt.Print("  [4/4] Verifying installation... ")
+	if _, err := os.Stat(".env"); err != nil {
+		fmt.Printf("FAILED!\n")
+		fmt.Printf("  Error: Configuration file not found\n")
+		fmt.Println()
+		fmt.Println("========================================================")
+		fmt.Println("          Installation FAILED!")
+		fmt.Println("========================================================")
+		fmt.Println()
+		os.Exit(1)
+	}
+	fmt.Println("OK")
 
 	fmt.Println()
 	fmt.Println("========================================================")
-	fmt.Println("          Installation Complete!")
+	fmt.Println("          Installation SUCCESS!")
 	fmt.Println("========================================================")
 	fmt.Println()
-	fmt.Printf("Database: %s\n", dbPath)
-	fmt.Printf("Port:     %s\n", port)
+	fmt.Printf("  Database: %s\n", dbPath)
+	fmt.Printf("  Port:     %s\n", port)
 	fmt.Println()
-	fmt.Println("To start the server, run: ./lab-asset-manager")
-	fmt.Printf("Access the application at: http://localhost:%s\n", port)
+	fmt.Println("  Next steps:")
+	fmt.Println("    1. Run: ./start.sh (Linux) or start.bat (Windows)")
+	fmt.Println("    2. Open browser: http://localhost:" + port)
 	fmt.Println()
 }
 
