@@ -39,7 +39,7 @@ echo "  Output:  $OUTPUT_NAME"
 echo ""
 
 # Step 1: Build React if not built
-echo "[1/4] Checking React build..."
+echo "[1/5] Checking React build..."
 if [ ! -d "$PROJECT_ROOT/web/dist" ]; then
     echo "  ERROR: web/dist not found!"
     echo "  Please run 'npm run build' in web folder first."
@@ -47,33 +47,39 @@ if [ ! -d "$PROJECT_ROOT/web/dist" ]; then
 fi
 echo "  OK: web/dist found"
 
-# Step 2: Copy dist to project root for embed
-echo "[2/4] Preparing embedded files..."
-rm -rf "$PROJECT_ROOT/dist"
-cp -r "$PROJECT_ROOT/web/dist" "$PROJECT_ROOT/dist"
-echo "  OK: Copied web/dist to project root"
+# Step 2: Copy dist to cmd/server for embed
+echo "[2/5] Preparing embedded files..."
+rm -rf "$PROJECT_ROOT/cmd/server/dist"
+cp -r "$PROJECT_ROOT/web/dist" "$PROJECT_ROOT/cmd/server/dist"
+echo "  OK: Copied web/dist to cmd/server/dist"
 
 # Step 3: Build Go binary
-echo "[3/4] Building Go binary for Linux..."
+echo "[3/5] Building Go binary for Linux..."
 cd "$PROJECT_ROOT"
-GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o "$OUTPUT_NAME" ./cmd/server
+CGO_ENABLED=0 go build -ldflags="-s -w" -o "$OUTPUT_NAME" ./cmd/server
 
 if [ $? -ne 0 ]; then
     echo ""
     echo "========================================"
     echo "  ERROR: Build failed!"
     echo "========================================"
+    rm -rf "$PROJECT_ROOT/cmd/server/dist"
     exit 1
 fi
 
 chmod +x "$OUTPUT_NAME"
-echo "  OK: Binary built: $OUTPUT_NAME"
+echo "  OK: Binary built"
 
 # Step 4: Copy to deploy folder
-echo "[4/4] Copying to deploy folder..."
+echo "[4/5] Copying to deploy folder..."
 cp "$OUTPUT_NAME" "$DEPLOY_DIR/$OUTPUT_NAME"
-rm -rf "$PROJECT_ROOT/dist"
 echo "  OK: Copied to deploy/$OUTPUT_NAME"
+
+# Step 5: Cleanup
+echo "[5/5] Cleaning up..."
+rm -rf "$PROJECT_ROOT/cmd/server/dist"
+rm -f "$PROJECT_NAME"
+echo "  OK"
 
 echo ""
 echo "========================================"
@@ -81,5 +87,9 @@ echo "  Build Successful!"
 echo "========================================"
 echo ""
 echo "  Binary: deploy/$OUTPUT_NAME"
-echo "  Size:  $(ls -lh "$DEPLOY_DIR/$OUTPUT_NAME" | awk '{print $5}')"
+echo "  Size:   $(ls -lh "$DEPLOY_DIR/$OUTPUT_NAME" | awk '{print $5}')"
+echo ""
+echo "  Upload to VPS:"
+echo "  1. Binary: deploy/$OUTPUT_NAME"
+echo "  2. Web files: web/dist/* -> /path/to/app/dist/"
 echo ""

@@ -1,1 +1,0 @@
-import{r as e}from"./rolldown-runtime-S-ySWqyJ.js";import{t}from"./jsx-runtime-CGgIkkjv.js";import{i as n}from"./dist-PG7ciWgS.js";import{t as r}from"./skeleton-DB-xpvxo.js";var i=e(t()),a=()=>(0,i.jsx)(n,{fallback:(0,i.jsx)(r,{className:`h-120 w-100`})});export{a as component};
