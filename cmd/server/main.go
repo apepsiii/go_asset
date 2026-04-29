@@ -25,7 +25,63 @@ var staticFiles embed.FS
 var migrationsFS embed.FS
 
 func init() {
+	// Extract embedded files to temp directory for runtime access
+	extractEmbeddings()
 	repository.InitMigrationsFS(migrationsFS)
+}
+
+func extractEmbeddings() {
+	// Get temp directory based on executable location
+	ex, err := os.Executable()
+	if err != nil {
+		log.Println("Warning: could not determine executable path")
+		return
+	}
+	dir := filepath.Dir(ex)
+	tempDir := filepath.Join(dir, "labasset-extracted")
+
+	// Create temp directory
+	if err := os.MkdirAll(tempDir, 0755); err != nil {
+		log.Printf("Warning: could not create temp dir: %v", err)
+		return
+	}
+
+	// Extract dist folder
+	extractDir(staticFiles, "dist", filepath.Join(tempDir, "dist"))
+
+	// Extract migrations folder
+	extractDir(migrationsFS, "migrations", filepath.Join(tempDir, "migrations"))
+
+	log.Printf("Extracted embedded files to: %s", tempDir)
+}
+
+func extractDir(fs embed.FS, srcDir, destDir string) error {
+	entries, err := fs.ReadDir(srcDir)
+	if err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll(destDir, 0755); err != nil {
+		return err
+	}
+
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+
+		data, err := fs.ReadFile(filepath.Join(srcDir, e.Name()))
+		if err != nil {
+			continue
+		}
+
+		destFile := filepath.Join(destDir, e.Name())
+		if err := os.WriteFile(destFile, data, 0644); err != nil {
+			log.Printf("Warning: could not extract %s: %v", e.Name(), err)
+		}
+	}
+
+	return nil
 }
 
 func main() {
@@ -93,40 +149,8 @@ func main() {
 
 	setupRoutes(api)
 
-	e.GET("/home/*", echo.WrapHandler(http.StripPrefix("/home/", http.FileServer(getFileSystem()))))
-	e.GET("/assets/*", echo.WrapHandler(http.StripPrefix("/assets/", http.FileServer(getFileSystem()))))
-	e.GET("/loans/*", echo.WrapHandler(http.StripPrefix("/loans/", http.FileServer(getFileSystem()))))
-	e.GET("/notifications/*", echo.WrapHandler(http.StripPrefix("/notifications/", http.FileServer(getFileSystem()))))
-	e.GET("/reports/*", echo.WrapHandler(http.StripPrefix("/reports/", http.FileServer(getFileSystem()))))
-	e.GET("/audit-logs/*", echo.WrapHandler(http.StripPrefix("/audit-logs/", http.FileServer(getFileSystem()))))
-	e.GET("/import-export/*", echo.WrapHandler(http.StripPrefix("/import-export/", http.FileServer(getFileSystem()))))
-	e.GET("/mass-label-print/*", echo.WrapHandler(http.StripPrefix("/mass-label-print/", http.FileServer(getFileSystem()))))
-	e.GET("/maintenance/*", echo.WrapHandler(http.StripPrefix("/maintenance/", http.FileServer(getFileSystem()))))
-	e.GET("/maintenance-label-print/*", echo.WrapHandler(http.StripPrefix("/maintenance-label-print/", http.FileServer(getFileSystem()))))
-	e.GET("/master-data/*", echo.WrapHandler(http.StripPrefix("/master-data/", http.FileServer(getFileSystem()))))
-	e.GET("/settings/*", echo.WrapHandler(http.StripPrefix("/settings/", http.FileServer(getFileSystem()))))
-	e.GET("/public/*", echo.WrapHandler(http.StripPrefix("/public/", http.FileServer(getFileSystem()))))
-
-	e.GET("/*", func(c *echo.Context) error {
-		path := c.Param("*")
-		if path == "" || path == "/" {
-			content, err := staticFiles.ReadFile("dist/index.html")
-			if err != nil {
-				return c.String(404, "Frontend not built")
-			}
-			return c.HTMLBlob(200, content)
-		}
-		filePath := filepath.Join("dist", path)
-		content, err := staticFiles.ReadFile(filePath)
-		if err == nil {
-			return c.Blob(200, detectContentType(path), content)
-		}
-		content, err = staticFiles.ReadFile("dist/index.html")
-		if err != nil {
-			return c.String(404, "Frontend not built")
-		}
-		return c.HTMLBlob(200, content)
-	})
+	// Serve static files from extracted directory
+	serveStatic(e)
 
 	e.Static("/uploads", "./uploads")
 
@@ -139,26 +163,72 @@ func main() {
 	}
 }
 
-func getFileSystem() http.FileSystem {
-	files, _ := fs.Sub(staticFiles, "dist")
-	return http.FS(files)
+func serveStatic(e *echo.Echo) {
+	// Get the directory where the executable is located
+	ex, err := os.Executable()
+	if err != nil {
+		log.Fatal("Could not determine executable path")
+	}
+	dir := filepath.Dir(ex)
+	extractedDir := filepath.Join(dir, "labasset-extracted", "dist")
+
+	// Check if extracted files exist
+	if _, err := os.Stat(extractedDir); os.IsNotExist(err) {
+		// Fallback to embedded
+		log.Println("Warning: extracted files not found, using embedded")
+		serveEmbedded(e)
+		return
+	}
+
+	// Serve from extracted directory
+	fs := http.Dir(extractedDir)
+	e.GET("/home/*", echo.WrapHandler(http.StripPrefix("/home/", http.FileServer(fs))))
+	e.GET("/assets/*", echo.WrapHandler(http.StripPrefix("/assets/", http.FileServer(fs))))
+	e.GET("/loans/*", echo.WrapHandler(http.StripPrefix("/loans/", http.FileServer(fs))))
+	e.GET("/notifications/*", echo.WrapHandler(http.StripPrefix("/notifications/", http.FileServer(fs))))
+	e.GET("/reports/*", echo.WrapHandler(http.StripPrefix("/reports/", http.FileServer(fs))))
+	e.GET("/audit-logs/*", echo.WrapHandler(http.StripPrefix("/audit-logs/", http.FileServer(fs))))
+	e.GET("/import-export/*", echo.WrapHandler(http.StripPrefix("/import-export/", http.FileServer(fs))))
+	e.GET("/mass-label-print/*", echo.WrapHandler(http.StripPrefix("/mass-label-print/", http.FileServer(fs))))
+	e.GET("/maintenance/*", echo.WrapHandler(http.StripPrefix("/maintenance/", http.FileServer(fs))))
+	e.GET("/maintenance-label-print/*", echo.WrapHandler(http.StripPrefix("/maintenance-label-print/", http.FileServer(fs))))
+	e.GET("/master-data/*", echo.WrapHandler(http.StripPrefix("/master-data/", http.FileServer(fs))))
+	e.GET("/settings/*", echo.WrapHandler(http.StripPrefix("/settings/", http.FileServer(fs))))
+	e.GET("/public/*", echo.WrapHandler(http.StripPrefix("/public/", http.FileServer(fs))))
+
+	e.GET("/*", echo.WrapHandler(http.FileServer(fs)))
 }
 
-func detectContentType(path string) string {
-	ext := strings.ToLower(filepath.Ext(path))
-	switch ext {
-	case ".html": return "text/html"
-	case ".js": return "application/javascript"
-	case ".css": return "text/css"
-	case ".png": return "image/png"
-	case ".jpg", ".jpeg": return "image/jpeg"
-	case ".svg": return "image/svg+xml"
-	case ".ico": return "image/x-icon"
-	case ".woff": return "font/woff"
-	case ".woff2": return "font/woff2"
-	case ".ttf": return "font/ttf"
-	default: return "application/octet-stream"
-	}
+func serveEmbedded(e *echo.Echo) {
+	fs := getFileSystem()
+	e.GET("/home/*", echo.WrapHandler(http.StripPrefix("/home/", http.FileServer(fs))))
+	e.GET("/assets/*", echo.WrapHandler(http.StripPrefix("/assets/", http.FileServer(fs))))
+	e.GET("/loans/*", echo.WrapHandler(http.StripPrefix("/loans/", http.FileServer(fs))))
+	e.GET("/notifications/*", echo.WrapHandler(http.StripPrefix("/notifications/", http.FileServer(fs))))
+	e.GET("/reports/*", echo.WrapHandler(http.StripPrefix("/reports/", http.FileServer(fs))))
+	e.GET("/audit-logs/*", echo.WrapHandler(http.StripPrefix("/audit-logs/", http.FileServer(fs))))
+	e.GET("/import-export/*", echo.WrapHandler(http.StripPrefix("/import-export/", http.FileServer(fs))))
+	e.GET("/mass-label-print/*", echo.WrapHandler(http.StripPrefix("/mass-label-print/", http.FileServer(fs))))
+	e.GET("/maintenance/*", echo.WrapHandler(http.StripPrefix("/maintenance/", http.FileServer(fs))))
+	e.GET("/maintenance-label-print/*", echo.WrapHandler(http.StripPrefix("/maintenance-label-print/", http.FileServer(fs))))
+	e.GET("/master-data/*", echo.WrapHandler(http.StripPrefix("/master-data/", http.FileServer(fs))))
+	e.GET("/settings/*", echo.WrapHandler(http.StripPrefix("/settings/", http.FileServer(fs))))
+	e.GET("/public/*", echo.WrapHandler(http.StripPrefix("/public/", http.FileServer(fs))))
+
+	e.GET("/*", func(c *echo.Context) error {
+		path := c.Param("*")
+		filePath := filepath.Join("dist", path)
+		content, err := staticFiles.ReadFile(filePath)
+		if err != nil {
+			content, _ = staticFiles.ReadFile("dist/index.html")
+		}
+		return c.HTMLBlob(200, content)
+	})
+}
+
+func getFileSystem() http.FileSystem {
+	myfs, _ := fs.Sub(staticFiles, "dist")
+	return http.FS(myfs)
 }
 
 func setupRoutes(api *echo.Group) {

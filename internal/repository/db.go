@@ -3,7 +3,6 @@ package repository
 import (
 	"database/sql"
 	"embed"
-	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -42,27 +41,27 @@ func InitDB(dbPath string) error {
 }
 
 func runMigrations() error {
+	// Try to find migrations directory relative to executable
 	ex, err := os.Executable()
-	if err != nil {
-		return err
-	}
-	dir := filepath.Dir(ex)
-	if dir == "" {
-		dir = "."
+	dir := "."
+	if err == nil {
+		dir = filepath.Dir(ex)
 	}
 
 	migrationsDir := filepath.Join(dir, "migrations")
 	if _, err := os.Stat(migrationsDir); os.IsNotExist(err) {
-		migrationsDir = filepath.Join(".", "migrations")
+		// Try current working directory
+		migrationsDir = "migrations"
+		if _, err := os.Stat(migrationsDir); os.IsNotExist(err) {
+			// Use embedded migrations
+			return runEmbeddedMigrations()
+		}
 	}
 
 	entries, err := os.ReadDir(migrationsDir)
 	if err != nil {
-		// Try embedded migrations
-		if migrationsFSHolder != nil {
-			return runEmbeddedMigrations()
-		}
-		return err
+		// Fallback to embedded
+		return runEmbeddedMigrations()
 	}
 
 	var files []string
@@ -73,7 +72,7 @@ func runMigrations() error {
 	}
 	sort.Strings(files)
 
-	if len(files) == 0 && migrationsFSHolder != nil {
+	if len(files) == 0 {
 		return runEmbeddedMigrations()
 	}
 
@@ -112,14 +111,19 @@ func runEmbeddedMigrations() error {
 	sort.Strings(files)
 
 	// Extract to temp directory
-	tempDir := filepath.Join(os.TempDir(), "labasset-migrations")
+	ex, err := os.Executable()
+	dir := "."
+	if err == nil {
+		dir = filepath.Dir(ex)
+	}
+
+	tempDir := filepath.Join(dir, "labasset-migrations")
 	os.RemoveAll(tempDir)
 	if err := os.MkdirAll(tempDir, 0755); err != nil {
 		return err
 	}
-	defer os.RemoveAll(tempDir)
 
-	// Extract embedded migrations
+	// Extract embedded migrations to temp
 	for _, f := range files {
 		data, err := fs.ReadFile(filepath.Join("migrations", f))
 		if err != nil {
@@ -130,7 +134,7 @@ func runEmbeddedMigrations() error {
 		}
 	}
 
-	// Now run from temp directory
+	// Now execute from temp directory
 	for _, f := range files {
 		data, err := os.ReadFile(filepath.Join(tempDir, f))
 		if err != nil {
@@ -150,38 +154,4 @@ func CloseDB() {
 	if DB != nil {
 		DB.Close()
 	}
-}
-
-// CopyEmbeddings copies embedded files to a directory
-func CopyEmbeddings(fs embed.FS, srcDir, destDir string) error {
-	entries, err := fs.ReadDir(srcDir)
-	if err != nil {
-		return err
-	}
-
-	for _, e := range entries {
-		if e.IsDir() {
-			continue
-		}
-
-		data, err := fs.ReadFile(filepath.Join(srcDir, e.Name()))
-		if err != nil {
-			return err
-		}
-
-		if err := os.MkdirAll(destDir, 0755); err != nil {
-			return err
-		}
-
-		if err := os.WriteFile(filepath.Join(destDir, e.Name()), data, 0644); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// ReaderFromEmbedFS creates a file reader from embedded FS
-func ReaderFromEmbedFS(fs embed.FS, path string) (io.ReadCloser, error) {
-	return fs.Open(path)
 }
