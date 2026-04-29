@@ -419,7 +419,7 @@ useEffect(() => {
               <TableBody>
                 {maintenanceLogs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center">
+                    <TableCell colSpan={6} className="text-center">
                       No maintenance records
                     </TableCell>
                   </TableRow>
@@ -431,9 +431,14 @@ useEffect(() => {
                       <TableCell>{log.technician_name || "-"}</TableCell>
                       <TableCell>{log.cost > 0 ? `Rp ${log.cost.toLocaleString("id-ID")}` : "-"}</TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteMaintLog(log.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => window.open(maintenanceLogApi.getLabelUrl(log.id), "_blank")}>
+                            <Printer className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDeleteMaintLog(log.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))

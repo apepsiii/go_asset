@@ -108,7 +108,7 @@ export function MassLabelPrint() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className={`p-6 space-y-6 ${showPrintPreview ? 'hidden print:hidden' : ''}`}>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
@@ -234,12 +234,12 @@ export function MassLabelPrint() {
                 {Array.from({ length: labelsPerPage }).map((_, labelIndex) => {
                   const assetIndex = pageIndex * labelsPerPage + labelIndex;
                   const asset = selectedAssets[assetIndex];
-                  if (!asset) return <div key={labelIndex} className="border" />;
+                  if (!asset) return <div key={labelIndex} className="border-2 border-black" />;
 
                   return (
                     <div
                       key={labelIndex}
-                      className="border p-1 text-[8px] leading-tight overflow-hidden"
+                      className="border-2 border-black p-1 text-[8px] leading-tight overflow-hidden"
                       style={{
                         width: `${printSettings.labelWidth}mm`,
                         height: `${printSettings.labelHeight}mm`,

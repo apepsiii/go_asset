@@ -107,6 +107,11 @@ func main() {
 	api.GET("/assets/:assetId/maintenance-logs", maintHandler.GetByAssetID)
 	api.POST("/assets/:assetId/maintenance-logs", maintHandler.Create)
 	api.DELETE("/maintenance-logs/:id", maintHandler.Delete)
+	api.GET("/maintenance-logs", maintHandler.GetAll)
+
+	maintLabelHandler := handler.NewMaintenanceLabelHandler()
+	api.GET("/maintenance-labels/:id", maintLabelHandler.GenerateLabel)
+	api.GET("/maintenance-labels-bulk/print", maintLabelHandler.GenerateBulkLabels)
 
 	upgradeHandler := handler.NewUpgradeLogHandler()
 	api.GET("/assets/:assetId/upgrade-logs", upgradeHandler.GetByAssetID)

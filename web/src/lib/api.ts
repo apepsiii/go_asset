@@ -100,6 +100,17 @@ export interface MaintenanceLog {
   cost: number;
 }
 
+export interface MaintenanceLogWithAsset {
+  id: number;
+  asset_id: number;
+  asset_code: string;
+  asset_name: string;
+  action_date: string;
+  description: string;
+  technician_name: string;
+  cost: number;
+}
+
 export interface UpgradeLog {
   id: number;
   asset_id: number;
@@ -291,9 +302,12 @@ export const uploadApi = {
 export const maintenanceLogApi = {
   getByAssetId: (assetId: number) =>
     api.get<MaintenanceLog[]>(`/api/assets/${assetId}/maintenance-logs`),
+  getAll: () => api.get<MaintenanceLogWithAsset[]>(`/api/maintenance-logs`),
   create: (assetId: number, data: Partial<MaintenanceLog>) =>
     api.post<MaintenanceLog>(`/api/assets/${assetId}/maintenance-logs`, data),
-  delete: (id: number) => api.delete(`/api/maintenance-logs/${id}`),
+  delete: (id: number) => api.delete(`/maintenance-logs/${id}`),
+  getLabelUrl: (id: number) => `${API_BASE_URL}/api/maintenance-labels/${id}`,
+  getBulkLabelUrl: (ids: number[]) => `${API_BASE_URL}/api/maintenance-labels-bulk/print?ids=${ids.join(",")}`,
 };
 
 export const upgradeLogApi = {

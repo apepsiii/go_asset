@@ -18,6 +18,15 @@ interface AppSettings {
   label_cols: number;
   label_width: number;
   label_height: number;
+  maint_label_width: number;
+  maint_label_height: number;
+  maint_label_cols: number;
+  maint_label_rows: number;
+  maint_label_margin_top: number;
+  maint_label_margin_left: number;
+  maint_label_gap_h: number;
+  maint_label_gap_v: number;
+  maint_label_font_size: number;
 }
 
 export function LabelSettings() {
@@ -26,10 +35,19 @@ export function LabelSettings() {
     institution_logo: "",
     address: "",
     phone: "",
-    label_rows: 7,
-    label_cols: 3,
-    label_width: 63.5,
-    label_height: 25.4,
+    label_rows: 4,
+    label_cols: 5,
+    label_width: 38.0,
+    label_height: 68.0,
+    maint_label_width: 64.0,
+    maint_label_height: 32.0,
+    maint_label_cols: 4,
+    maint_label_rows: 6,
+    maint_label_margin_top: 5.0,
+    maint_label_margin_left: 2.0,
+    maint_label_gap_h: 2.0,
+    maint_label_gap_v: 2.0,
+    maint_label_font_size: 8.0,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -43,7 +61,7 @@ export function LabelSettings() {
     try {
       const res = await fetch(`${API_BASE}/api/settings`);
       const data = await res.json();
-      setSettings(data);
+      setSettings(prev => ({ ...prev, ...data }));
     } catch {
       toast.error("Failed to fetch settings");
     } finally {
@@ -96,6 +114,10 @@ export function LabelSettings() {
     }
   };
 
+  const updateField = <K extends keyof AppSettings>(field: K, value: AppSettings[K]) => {
+    setSettings(prev => ({ ...prev, [field]: value }));
+  };
+
   if (loading) {
     return <div className="p-6">Loading...</div>;
   }
@@ -121,7 +143,7 @@ export function LabelSettings() {
               <Label>Institution Name</Label>
               <Input
                 value={settings.institution_name}
-                onChange={(e) => setSettings({ ...settings, institution_name: e.target.value })}
+                onChange={(e) => updateField("institution_name", e.target.value)}
                 placeholder="SMK NIBA"
               />
             </div>
@@ -129,7 +151,7 @@ export function LabelSettings() {
               <Label>Address</Label>
               <Input
                 value={settings.address}
-                onChange={(e) => setSettings({ ...settings, address: e.target.value })}
+                onChange={(e) => updateField("address", e.target.value)}
                 placeholder="Jl. Merdeka No. 123"
               />
             </div>
@@ -137,7 +159,7 @@ export function LabelSettings() {
               <Label>Phone</Label>
               <Input
                 value={settings.phone}
-                onChange={(e) => setSettings({ ...settings, phone: e.target.value })}
+                onChange={(e) => updateField("phone", e.target.value)}
                 placeholder="021-12345678"
               />
             </div>
@@ -174,7 +196,7 @@ export function LabelSettings() {
 
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>A4 Sticker Layout</CardTitle>
+            <CardTitle>A4 Sticker Layout (Asset Label)</CardTitle>
             <CardDescription>Configure grid layout for mass label printing</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -186,9 +208,9 @@ export function LabelSettings() {
                   min={1}
                   max={20}
                   value={settings.label_rows}
-                  onChange={(e) => setSettings({ ...settings, label_rows: parseInt(e.target.value) || 7 })}
+                  onChange={(e) => updateField("label_rows", parseInt(e.target.value) || 4)}
                 />
-                <p className="text-xs text-muted-foreground">Tom & Jerry: 7</p>
+                <p className="text-xs text-muted-foreground">Default: 4 (untuk 20 label)</p>
               </div>
               <div className="space-y-2">
                 <Label>Columns</Label>
@@ -197,7 +219,7 @@ export function LabelSettings() {
                   min={1}
                   max={10}
                   value={settings.label_cols}
-                  onChange={(e) => setSettings({ ...settings, label_cols: parseInt(e.target.value) || 3 })}
+                  onChange={(e) => updateField("label_cols", parseInt(e.target.value) || 3)}
                 />
               </div>
               <div className="space-y-2">
@@ -208,7 +230,7 @@ export function LabelSettings() {
                   min={10}
                   max={100}
                   value={settings.label_width}
-                  onChange={(e) => setSettings({ ...settings, label_width: parseFloat(e.target.value) || 63.5 })}
+                  onChange={(e) => updateField("label_width", parseFloat(e.target.value) || 63.5)}
                 />
               </div>
               <div className="space-y-2">
@@ -219,7 +241,7 @@ export function LabelSettings() {
                   min={10}
                   max={100}
                   value={settings.label_height}
-                  onChange={(e) => setSettings({ ...settings, label_height: parseFloat(e.target.value) || 25.4 })}
+                  onChange={(e) => updateField("label_height", parseFloat(e.target.value) || 25.4)}
                 />
               </div>
             </div>
@@ -231,6 +253,157 @@ export function LabelSettings() {
               <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${settings.label_cols}, 1fr)` }}>
                 {Array.from({ length: Math.min(settings.label_rows * settings.label_cols, 21) }).map((_, i) => (
                   <div key={i} className="border border-blue-300 rounded bg-white aspect-[63.5/25.4] flex items-center justify-center text-xs text-blue-400">
+                    {i + 1}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Maintenance Label Layout (Tom & Jerry 103)</CardTitle>
+            <CardDescription>Configure grid layout for maintenance label printing</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="space-y-2">
+                <Label>Label Width (mm)</Label>
+                <Input
+                  type="number"
+                  step={0.1}
+                  min={10}
+                  max={200}
+                  value={settings.maint_label_width}
+                  onChange={(e) => updateField("maint_label_width", parseFloat(e.target.value) || 64)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Label Height (mm)</Label>
+                <Input
+                  type="number"
+                  step={0.1}
+                  min={10}
+                  max={200}
+                  value={settings.maint_label_height}
+                  onChange={(e) => updateField("maint_label_height", parseFloat(e.target.value) || 32)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Columns</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={settings.maint_label_cols}
+                  onChange={(e) => updateField("maint_label_cols", parseInt(e.target.value) || 4)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Rows</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={15}
+                  value={settings.maint_label_rows}
+                  onChange={(e) => updateField("maint_label_rows", parseInt(e.target.value) || 6)}
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="space-y-2">
+                <Label>Margin Top (mm)</Label>
+                <Input
+                  type="number"
+                  step={0.1}
+                  min={0}
+                  max={50}
+                  value={settings.maint_label_margin_top}
+                  onChange={(e) => updateField("maint_label_margin_top", parseFloat(e.target.value) || 5)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Margin Left (mm)</Label>
+                <Input
+                  type="number"
+                  step={0.1}
+                  min={0}
+                  max={50}
+                  value={settings.maint_label_margin_left}
+                  onChange={(e) => updateField("maint_label_margin_left", parseFloat(e.target.value) || 2)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Gap Horizontal (mm)</Label>
+                <Input
+                  type="number"
+                  step={0.1}
+                  min={0}
+                  max={20}
+                  value={settings.maint_label_gap_h}
+                  onChange={(e) => updateField("maint_label_gap_h", parseFloat(e.target.value) || 2)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Gap Vertical (mm)</Label>
+                <Input
+                  type="number"
+                  step={0.1}
+                  min={0}
+                  max={20}
+                  value={settings.maint_label_gap_v}
+                  onChange={(e) => updateField("maint_label_gap_v", parseFloat(e.target.value) || 2)}
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="space-y-2">
+                <Label>Font Size (pt)</Label>
+                <Input
+                  type="number"
+                  step={0.5}
+                  min={3}
+                  max={12}
+                  value={settings.maint_label_font_size}
+                  onChange={(e) => updateField("maint_label_font_size", parseFloat(e.target.value) || 5)}
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <h4 className="font-medium text-green-800 mb-2">
+                Preview: {settings.maint_label_cols * settings.maint_label_rows} labels per page
+              </h4>
+              <p className="text-sm text-green-700 mb-3">
+                Label Size: {settings.maint_label_width}mm x {settings.maint_label_height}mm
+              </p>
+              <div
+                className="grid gap-1 bg-white p-2 rounded border border-green-300"
+                style={{
+                  gridTemplateColumns: `repeat(${settings.maint_label_cols}, 1fr)`,
+                  width: 'fit-content'
+                }}
+              >
+                {Array.from({ length: Math.min(settings.maint_label_cols * settings.maint_label_rows, 24) }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="border border-green-400 rounded flex items-center justify-center text-xs text-green-600 bg-green-50"
+                    style={{
+                      width: `${settings.maint_label_width / 4}px`,
+                      height: `${settings.maint_label_height / 4}px`,
+                      minWidth: '20px',
+                      minHeight: '15px'
+                    }}
+                  >
                     {i + 1}
                   </div>
                 ))}

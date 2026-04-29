@@ -13,6 +13,7 @@ import {
   Shield,
   Upload,
   UserCog,
+  Wrench,
 } from 'lucide-react'
 import { type SidebarData } from '../types'
 
@@ -31,7 +32,7 @@ export const sidebarData: SidebarData = {
   ],
   navGroups: [
     {
-      title: 'General',
+      title: 'Main',
       items: [
         {
           title: 'Dashboard',
@@ -49,21 +50,15 @@ export const sidebarData: SidebarData = {
           icon: ArrowLeftRight,
         },
         {
-          title: 'Notifications',
-          url: '/notifications',
-          icon: Bell,
+          title: 'Maintenance',
+          url: '/maintenance',
+          icon: Wrench,
         },
-        {
-          title: 'Audit Logs',
-          url: '/audit-logs',
-          icon: Shield,
-          adminOnly: true,
-        },
-        {
-          title: 'Import/Export',
-          url: '/import-export',
-          icon: Upload,
-        },
+      ],
+    },
+    {
+      title: 'Reports',
+      items: [
         {
           title: 'Reports',
           url: '/reports',
@@ -71,143 +66,62 @@ export const sidebarData: SidebarData = {
           adminOnly: true,
         },
         {
-          title: 'Mass Label Print',
-          url: '/mass-label-print',
-          icon: Printer,
+          title: 'Audit Logs',
+          url: '/audit-logs',
+          icon: Shield,
           adminOnly: true,
         },
-        {
-          title: 'Master Data',
-          icon: Package,
-          items: [
-            {
-              title: 'Categories',
-              url: '/master-data/categories',
-              icon: Laptop,
-            },
-            {
-              title: 'Budget Sources',
-              url: '/master-data/budget-sources',
-              icon: DollarSign,
-            },
-            {
-              title: 'Locations',
-              url: '/master-data/locations',
-              icon: MapPin,
-            },
-          ],
-        },
-        // {
-        //   title: 'Tasks',
-        //   url: '/tasks',
-        //   icon: ListTodo,
-        // },
-        // {
-        //   title: 'Apps',
-        //   url: '/apps',
-        //   icon: Package,
-        // },
-        // {
-        //   title: 'Chats',
-        //   url: '/chats',
-        //   badge: '3',
-        //   icon: MessagesSquare,
-        // },
-        // {
-        //   title: 'Users',
-        //   url: '/users',
-        //   icon: Users,
-        // },
-        // {
-        //   title: 'Secured by Clerk',
-        //   icon: ClerkLogo,
-        //   items: [
-        //     {
-        //       title: 'Sign In',
-        //       url: '/clerk/sign-in',
-        //     },
-        //     {
-        //       title: 'Sign Up',
-        //       url: '/clerk/sign-up',
-        //     },
-        //     {
-        //       title: 'User Management',
-        //       url: '/clerk/user-management',
-        //     },
-        //   ],
-        // },
       ],
     },
-    // {
-    //   title: 'Pages',
-    //   items: [
-    //     {
-    //       title: 'Auth',
-    //       icon: ShieldCheck,
-    //       items: [
-    //         {
-    //           title: 'Sign In',
-    //           url: '/sign-in',
-    //         },
-    //         {
-    //           title: 'Sign In (2 Col)',
-    //           url: '/sign-in-2',
-    //         },
-    //         {
-    //           title: 'Sign Up',
-    //           url: '/sign-up',
-    //         },
-    //         {
-    //           title: 'Forgot Password',
-    //           url: '/forgot-password',
-    //         },
-    //         {
-    //           title: 'OTP',
-    //           url: '/otp',
-    //         },
-    //       ],
-    //     },
-    //     {
-    //       title: 'Errors',
-    //       icon: Bug,
-    //       items: [
-    //         {
-    //           title: 'Unauthorized',
-    //           url: '/errors/unauthorized',
-    //           icon: Lock,
-    //         },
-    //         {
-    //           title: 'Forbidden',
-    //           url: '/errors/forbidden',
-    //           icon: UserX,
-    //         },
-    //         {
-    //           title: 'Not Found',
-    //           url: '/errors/not-found',
-    //           icon: FileX,
-    //         },
-    //         {
-    //           title: 'Internal Server Error',
-    //           url: '/errors/internal-server-error',
-    //           icon: ServerOff,
-    //         },
-    //         {
-    //           title: 'Maintenance Error',
-    //           url: '/errors/maintenance-error',
-    //           icon: Construction,
-    //         },
-    //       ],
-    //     },
-    //   ],
-    // },
     {
-      title: 'Other',
+      title: 'Print Labels',
       items: [
         {
-          title: 'Settings',
-          icon: Settings,
-          items: [
-{
+          title: 'Label Aset',
+          url: '/mass-label-print',
+          icon: Printer,
+        },
+        {
+          title: 'Label Maintenance',
+          url: '/maintenance-label-print',
+          icon: Printer,
+        },
+      ],
+    },
+    {
+      title: 'Data',
+      items: [
+        {
+          title: 'Notifications',
+          url: '/notifications',
+          icon: Bell,
+        },
+        {
+          title: 'Import/Export',
+          url: '/import-export',
+          icon: Upload,
+        },
+        {
+          title: 'Categories',
+          url: '/master-data/categories',
+          icon: Laptop,
+        },
+        {
+          title: 'Budget Sources',
+          url: '/master-data/budget-sources',
+          icon: DollarSign,
+        },
+        {
+          title: 'Locations',
+          url: '/master-data/locations',
+          icon: MapPin,
+        },
+      ],
+    },
+    {
+      title: 'Settings',
+      items: [
+        {
           title: 'Profile',
           url: '/settings',
           icon: UserCog,
@@ -218,33 +132,6 @@ export const sidebarData: SidebarData = {
           icon: Printer,
           adminOnly: true,
         },
-        // {
-        //   title: 'Account',
-            //   url: '/settings/account',
-            //   icon: Wrench,
-            // },
-            // {
-            //   title: 'Appearance',
-            //   url: '/settings/appearance',
-            //   icon: Palette,
-            // },
-            // {
-            //   title: 'Notifications',
-            //   url: '/settings/notifications',
-            //   icon: Bell,
-            // },
-            // {
-            //   title: 'Display',
-            //   url: '/settings/display',
-            //   icon: Monitor,
-            // },
-          ],
-        },
-        // {
-        //   title: 'Help Center',
-        //   url: '/help-center',
-        //   icon: HelpCircle,
-        // },
       ],
     },
   ],

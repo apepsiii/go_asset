@@ -52,6 +52,17 @@ type MaintenanceLog struct {
 	Cost           float64   `json:"cost"`
 }
 
+type MaintenanceLogWithAsset struct {
+	ID             int64     `json:"id"`
+	AssetID        int64     `json:"asset_id"`
+	AssetCode      string    `json:"asset_code"`
+	AssetName      string    `json:"asset_name"`
+	ActionDate     time.Time `json:"action_date"`
+	Description    string    `json:"description"`
+	TechnicianName string    `json:"technician_name"`
+	Cost           float64   `json:"cost"`
+}
+
 type UpgradeLog struct {
 	ID          int64     `json:"id"`
 	AssetID     int64     `json:"asset_id"`

@@ -24,6 +24,15 @@ type AppSettings struct {
 	LabelCols       int     `json:"label_cols"`
 	LabelWidth      float64 `json:"label_width"`
 	LabelHeight     float64 `json:"label_height"`
+	MaintLabelWidth float64 `json:"maint_label_width"`
+	MaintLabelHeight float64 `json:"maint_label_height"`
+	MaintLabelCols int     `json:"maint_label_cols"`
+	MaintLabelRows int     `json:"maint_label_rows"`
+	MaintLabelMarginTop float64 `json:"maint_label_margin_top"`
+	MaintLabelMarginLeft float64 `json:"maint_label_margin_left"`
+	MaintLabelGapH float64 `json:"maint_label_gap_h"`
+	MaintLabelGapV float64 `json:"maint_label_gap_v"`
+	MaintLabelFontSize float64 `json:"maint_label_font_size"`
 }
 
 var settings = AppSettings{
@@ -31,10 +40,19 @@ var settings = AppSettings{
 	InstitutionLogo: "",
 	Address:         "",
 	Phone:           "",
-	LabelRows:       7,
-	LabelCols:       3,
-	LabelWidth:      63.5,
-	LabelHeight:     25.4,
+	LabelRows:       4,
+	LabelCols:       5,
+	LabelWidth:      38.0,
+	LabelHeight:     68.0,
+	MaintLabelWidth:    64.0,
+	MaintLabelHeight:   32.0,
+	MaintLabelCols:     4,
+	MaintLabelRows:     6,
+	MaintLabelMarginTop:  5.0,
+	MaintLabelMarginLeft: 2.0,
+	MaintLabelGapH:      2.0,
+	MaintLabelGapV:      2.0,
+	MaintLabelFontSize:  8.0,
 }
 
 func (h *SettingsHandler) GetSettings(c *echo.Context) error {
@@ -67,6 +85,33 @@ func (h *SettingsHandler) UpdateSettings(c *echo.Context) error {
 	}
 	if input.LabelHeight > 0 {
 		settings.LabelHeight = input.LabelHeight
+	}
+	if input.MaintLabelWidth > 0 {
+		settings.MaintLabelWidth = input.MaintLabelWidth
+	}
+	if input.MaintLabelHeight > 0 {
+		settings.MaintLabelHeight = input.MaintLabelHeight
+	}
+	if input.MaintLabelCols > 0 {
+		settings.MaintLabelCols = input.MaintLabelCols
+	}
+	if input.MaintLabelRows > 0 {
+		settings.MaintLabelRows = input.MaintLabelRows
+	}
+	if input.MaintLabelMarginTop >= 0 {
+		settings.MaintLabelMarginTop = input.MaintLabelMarginTop
+	}
+	if input.MaintLabelMarginLeft >= 0 {
+		settings.MaintLabelMarginLeft = input.MaintLabelMarginLeft
+	}
+	if input.MaintLabelGapH >= 0 {
+		settings.MaintLabelGapH = input.MaintLabelGapH
+	}
+	if input.MaintLabelGapV >= 0 {
+		settings.MaintLabelGapV = input.MaintLabelGapV
+	}
+	if input.MaintLabelFontSize > 0 {
+		settings.MaintLabelFontSize = input.MaintLabelFontSize
 	}
 
 	return c.JSON(http.StatusOK, settings)

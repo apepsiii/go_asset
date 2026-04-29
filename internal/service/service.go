@@ -542,6 +542,32 @@ func (s *MaintenanceLogService) GetByAssetID(assetID string) ([]models.Maintenan
 	return logs, nil
 }
 
+func (s *MaintenanceLogService) GetAll() ([]models.MaintenanceLogWithAsset, error) {
+	rows, err := repository.DB.Query(`
+		SELECT m.id, m.asset_id, a.code, a.name, m.action_date, m.description, m.technician_name, m.cost
+		FROM maintenance_logs m
+		JOIN assets a ON m.asset_id = a.id
+		ORDER BY m.action_date DESC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var logs []models.MaintenanceLogWithAsset
+	for rows.Next() {
+		var log models.MaintenanceLogWithAsset
+		if err := rows.Scan(&log.ID, &log.AssetID, &log.AssetCode, &log.AssetName, &log.ActionDate, &log.Description, &log.TechnicianName, &log.Cost); err != nil {
+			continue
+		}
+		logs = append(logs, log)
+	}
+	if logs == nil {
+		logs = []models.MaintenanceLogWithAsset{}
+	}
+	return logs, nil
+}
+
 type CreateMaintenanceLogInput struct {
 	ActionDate     time.Time `json:"action_date"`
 	Description    string    `json:"description"`

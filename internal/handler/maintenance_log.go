@@ -26,6 +26,14 @@ func (h *MaintenanceLogHandler) GetByAssetID(c *echo.Context) error {
 	return c.JSON(http.StatusOK, logs)
 }
 
+func (h *MaintenanceLogHandler) GetAll(c *echo.Context) error {
+	logs, err := h.svc.GetAll()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+	return c.JSON(http.StatusOK, logs)
+}
+
 func (h *MaintenanceLogHandler) Create(c *echo.Context) error {
 	assetID := c.Param("assetId")
 	var input service.CreateMaintenanceLogInput

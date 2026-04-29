@@ -33,6 +33,8 @@ import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports/index'
 import { Route as AuthenticatedNotificationsIndexRouteImport } from './routes/_authenticated/notifications/index'
 import { Route as AuthenticatedMassLabelPrintIndexRouteImport } from './routes/_authenticated/mass-label-print/index'
+import { Route as AuthenticatedMaintenanceIndexRouteImport } from './routes/_authenticated/maintenance/index'
+import { Route as AuthenticatedMaintenanceLabelPrintIndexRouteImport } from './routes/_authenticated/maintenance-label-print/index'
 import { Route as AuthenticatedLoansIndexRouteImport } from './routes/_authenticated/loans/index'
 import { Route as AuthenticatedImportExportIndexRouteImport } from './routes/_authenticated/import-export/index'
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
@@ -177,6 +179,18 @@ const AuthenticatedMassLabelPrintIndexRoute =
   AuthenticatedMassLabelPrintIndexRouteImport.update({
     id: '/mass-label-print/',
     path: '/mass-label-print/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMaintenanceIndexRoute =
+  AuthenticatedMaintenanceIndexRouteImport.update({
+    id: '/maintenance/',
+    path: '/maintenance/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMaintenanceLabelPrintIndexRoute =
+  AuthenticatedMaintenanceLabelPrintIndexRouteImport.update({
+    id: '/maintenance-label-print/',
+    path: '/maintenance-label-print/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedLoansIndexRoute = AuthenticatedLoansIndexRouteImport.update({
@@ -343,6 +357,8 @@ export interface FileRoutesByFullPath {
   '/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/import-export/': typeof AuthenticatedImportExportIndexRoute
   '/loans/': typeof AuthenticatedLoansIndexRoute
+  '/maintenance-label-print/': typeof AuthenticatedMaintenanceLabelPrintIndexRoute
+  '/maintenance/': typeof AuthenticatedMaintenanceIndexRoute
   '/mass-label-print/': typeof AuthenticatedMassLabelPrintIndexRoute
   '/notifications/': typeof AuthenticatedNotificationsIndexRoute
   '/reports/': typeof AuthenticatedReportsIndexRoute
@@ -388,6 +404,8 @@ export interface FileRoutesByTo {
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/import-export': typeof AuthenticatedImportExportIndexRoute
   '/loans': typeof AuthenticatedLoansIndexRoute
+  '/maintenance-label-print': typeof AuthenticatedMaintenanceLabelPrintIndexRoute
+  '/maintenance': typeof AuthenticatedMaintenanceIndexRoute
   '/mass-label-print': typeof AuthenticatedMassLabelPrintIndexRoute
   '/notifications': typeof AuthenticatedNotificationsIndexRoute
   '/reports': typeof AuthenticatedReportsIndexRoute
@@ -438,6 +456,8 @@ export interface FileRoutesById {
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/_authenticated/import-export/': typeof AuthenticatedImportExportIndexRoute
   '/_authenticated/loans/': typeof AuthenticatedLoansIndexRoute
+  '/_authenticated/maintenance-label-print/': typeof AuthenticatedMaintenanceLabelPrintIndexRoute
+  '/_authenticated/maintenance/': typeof AuthenticatedMaintenanceIndexRoute
   '/_authenticated/mass-label-print/': typeof AuthenticatedMassLabelPrintIndexRoute
   '/_authenticated/notifications/': typeof AuthenticatedNotificationsIndexRoute
   '/_authenticated/reports/': typeof AuthenticatedReportsIndexRoute
@@ -486,6 +506,8 @@ export interface FileRouteTypes {
     | '/help-center/'
     | '/import-export/'
     | '/loans/'
+    | '/maintenance-label-print/'
+    | '/maintenance/'
     | '/mass-label-print/'
     | '/notifications/'
     | '/reports/'
@@ -531,6 +553,8 @@ export interface FileRouteTypes {
     | '/help-center'
     | '/import-export'
     | '/loans'
+    | '/maintenance-label-print'
+    | '/maintenance'
     | '/mass-label-print'
     | '/notifications'
     | '/reports'
@@ -580,6 +604,8 @@ export interface FileRouteTypes {
     | '/_authenticated/help-center/'
     | '/_authenticated/import-export/'
     | '/_authenticated/loans/'
+    | '/_authenticated/maintenance-label-print/'
+    | '/_authenticated/maintenance/'
     | '/_authenticated/mass-label-print/'
     | '/_authenticated/notifications/'
     | '/_authenticated/reports/'
@@ -784,6 +810,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMassLabelPrintIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/maintenance/': {
+      id: '/_authenticated/maintenance/'
+      path: '/maintenance'
+      fullPath: '/maintenance/'
+      preLoaderRoute: typeof AuthenticatedMaintenanceIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/maintenance-label-print/': {
+      id: '/_authenticated/maintenance-label-print/'
+      path: '/maintenance-label-print'
+      fullPath: '/maintenance-label-print/'
+      preLoaderRoute: typeof AuthenticatedMaintenanceLabelPrintIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/loans/': {
       id: '/_authenticated/loans/'
       path: '/loans'
@@ -984,6 +1024,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
   AuthenticatedImportExportIndexRoute: typeof AuthenticatedImportExportIndexRoute
   AuthenticatedLoansIndexRoute: typeof AuthenticatedLoansIndexRoute
+  AuthenticatedMaintenanceLabelPrintIndexRoute: typeof AuthenticatedMaintenanceLabelPrintIndexRoute
+  AuthenticatedMaintenanceIndexRoute: typeof AuthenticatedMaintenanceIndexRoute
   AuthenticatedMassLabelPrintIndexRoute: typeof AuthenticatedMassLabelPrintIndexRoute
   AuthenticatedNotificationsIndexRoute: typeof AuthenticatedNotificationsIndexRoute
   AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
@@ -1008,6 +1050,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
   AuthenticatedImportExportIndexRoute: AuthenticatedImportExportIndexRoute,
   AuthenticatedLoansIndexRoute: AuthenticatedLoansIndexRoute,
+  AuthenticatedMaintenanceLabelPrintIndexRoute:
+    AuthenticatedMaintenanceLabelPrintIndexRoute,
+  AuthenticatedMaintenanceIndexRoute: AuthenticatedMaintenanceIndexRoute,
   AuthenticatedMassLabelPrintIndexRoute: AuthenticatedMassLabelPrintIndexRoute,
   AuthenticatedNotificationsIndexRoute: AuthenticatedNotificationsIndexRoute,
   AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
