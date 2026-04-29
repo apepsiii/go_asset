@@ -97,19 +97,24 @@ export function AssetDetail() {
   const [showQRDialog, setShowQRDialog] = useState(false);
   const [showQRLoading, setShowQRLoading] = useState(false);
 
-  useEffect(() => {
+useEffect(() => {
     const fetchData = async () => {
       try {
         const assetId = parseInt(id, 10);
+        if (isNaN(assetId)) {
+          toast.error("Invalid asset ID");
+          navigate({ to: "/assets" });
+          return;
+        }
         const [assetRes, categoriesRes, locationsRes, budgetRes, maintRes, upgradeRes, loanRes, deprRes] =
           await Promise.all([
             assetApi.getById(assetId),
             categoryApi.getAll(),
             locationApi.getAll(),
             budgetSourceApi.getAll(),
-            maintenanceLogApi.getByAssetId(assetId),
-            upgradeLogApi.getByAssetId(assetId),
-            loanApi.getByAssetId(assetId),
+            maintenanceLogApi.getByAssetId(assetId).catch(() => ({ data: [] })),
+            upgradeLogApi.getByAssetId(assetId).catch(() => ({ data: [] })),
+            loanApi.getByAssetId(assetId).catch(() => ({ data: [] })),
             assetApi.getDepreciation(assetId).catch(() => ({ data: null })),
           ]);
         setAsset(assetRes.data);
@@ -122,14 +127,15 @@ export function AssetDetail() {
         if (deprRes.data) {
           setDepreciation(deprRes.data);
         }
-      } catch {
-        toast.error("Failed to fetch asset");
+      } catch (err: any) {
+        console.error("Fetch asset error:", err);
+        toast.error(err?.response?.data?.error || "Failed to fetch asset");
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, [id]);
+  }, [id, navigate]);
 
   const handleDelete = async () => {
     if (deleteId === null || !asset) return;

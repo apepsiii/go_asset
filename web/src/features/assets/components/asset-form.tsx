@@ -110,6 +110,18 @@ export function AssetForm({ mode }: AssetFormProps) {
         if (mode === "edit" && assetId) {
           const assetRes = await assetApi.getById(assetId);
           const asset = assetRes.data;
+
+          let parsedSpecs = {};
+          if (asset.specifications) {
+            try {
+              parsedSpecs = typeof asset.specifications === 'string'
+                ? JSON.parse(asset.specifications)
+                : asset.specifications;
+            } catch {
+              parsedSpecs = {};
+            }
+          }
+
           setForm({
             code: asset.code,
             name: asset.name,
@@ -118,7 +130,7 @@ export function AssetForm({ mode }: AssetFormProps) {
             location_id: asset.location_id?.toString() || "",
             condition: asset.condition,
             specification: asset.specification || "",
-            specifications: asset.specifications ? JSON.parse(asset.specifications) : {},
+            specifications: parsedSpecs,
             photo_url: asset.photo_url || "",
             purchase_date: asset.purchase_date ? asset.purchase_date.split("T")[0] : "",
             price: asset.price?.toString() || "",
