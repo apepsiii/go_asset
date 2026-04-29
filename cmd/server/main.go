@@ -18,8 +18,15 @@ import (
 	"lab-asset-manager/internal/repository"
 )
 
-//go:embed dist/*
+//go:embed dist/* migrations/*
 var staticFiles embed.FS
+
+//go:embed migrations
+var migrationsFS embed.FS
+
+func init() {
+	repository.InitMigrationsFS(migrationsFS)
+}
 
 func main() {
 	err := godotenv.Load()
