@@ -94,7 +94,7 @@ export function QuickLoan() {
     }
   }, [scanning, lastScanned]);
 
-  const detectQRCode = (imageData: ImageData): string | null => {
+  const detectQRCode = (_imageData: ImageData): string | null => {
     return null;
   };
 

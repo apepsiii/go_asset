@@ -68,7 +68,9 @@ export function UserAuthForm({
         }
 
         // Set user and access token
+        // @ts-ignore - mock auth for development
         auth.setUser(mockUser)
+        // @ts-ignore - mock auth for development
         auth.setAccessToken('mock-access-token')
 
         // Redirect to the stored location or default to dashboard

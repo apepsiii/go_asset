@@ -2,7 +2,6 @@ import { useUser } from '@clerk/react'
 import { User } from 'lucide-react'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 
 export function ProfileForm() {

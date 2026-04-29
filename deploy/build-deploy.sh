@@ -378,7 +378,6 @@ cat > "$DEPLOY_DIR/README.md" << 'READMEEOF'
 
 ## Requirements
 - Go 1.21+ (for building from source)
-- OR use pre-built binary
 
 ## Quick Start
 

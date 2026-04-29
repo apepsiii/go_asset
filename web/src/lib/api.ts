@@ -15,7 +15,7 @@ api.interceptors.request.use(async (config) => {
     // Try to get token using getAuth() or from window.__clerk
     let token = null;
     
-    if (clerk.useAuth) {
+    if (typeof clerk.useAuth !== 'undefined') {
       // Clerk is loaded, try to get token from window if available
       const clerkWindow = (window as any).__clerk;
       if (clerkWindow?.client?.sessions?.length > 0) {
@@ -25,7 +25,7 @@ api.interceptors.request.use(async (config) => {
       }
     }
     
-    if (!token && clerk.getToken) {
+    if (!token && typeof clerk.getToken !== 'undefined') {
       try {
         token = await clerk.getToken();
       } catch {

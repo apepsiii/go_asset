@@ -21,32 +21,6 @@ if %ERRORLEVEL% neq 0 (
 REM Create server directory
 if not exist "cmd\server" mkdir cmd\server
 
-REM Create the main.go file
-(
-echo package main
-echo.
-echo import (
-echo 	"embed"
-echo 	"fmt"
-echo 	"io/fs"
-echo 	"log"
-echo 	"net/http"
-echo 	"os"
-echo 	"path/filepath"
-echo 	"strings"
-echo.
-echo 	"github.com/joho/godotenv"
-echo 	"github.com/labstack/echo/v5"
-echo 	echoMiddleware "github.com/labstack/echo/v5/middleware"
-echo 	"lab-asset-manager/internal/handler"
-echo 	"lab-asset-manager/internal/middleware"
-echo 	"lab-asset-manager/internal/repository"
-echo )
-echo.
-echo //go:embed all:dist
-echo var staticFiles embed.FS
-) > cmd\server\main_part1.go
-
 echo Creating cmd\server\main.go...
 
 REM Use PowerShell to write the full main.go
@@ -237,7 +211,7 @@ func runWizard() {
 	fmt.Println(\"     LabAsset Manager - Installation Wizard\")
 	fmt.Println(\"========================================================\")
 	fmt.Println()
-	
+
 	var port, dbPath, clerkKey, allowUnauth string
 	fmt.Print(\"Enter port number [8080]: \")
 	fmt.Scanln(&port)
@@ -249,7 +223,7 @@ func runWizard() {
 	fmt.Scanln(&clerkKey)
 	fmt.Print(\"Allow unauthenticated access? (yes/no) [no]: \")
 	fmt.Scanln(&allowUnauth)
-	
+
 	envContent := fmt.Sprintf(\"PORT=%s\nDB_PATH=%s\n\", port, dbPath)
 	if clerkKey != \"\" {
 		envContent += \"CLERK_SECRET_KEY=\" + clerkKey + \"\n\"
@@ -257,12 +231,12 @@ func runWizard() {
 	if strings.ToLower(allowUnauth) == \"yes\" {
 		envContent += \"ALLOW_UNAUTHENTICATED=1\n\"
 	}
-	
+
 	os.WriteFile(\".env\", []byte(envContent), 0644)
 	os.MkdirAll(filepath.Dir(dbPath), 0755)
 	repository.InitDB(dbPath)
 	defer repository.CloseDB()
-	
+
 	fmt.Println()
 	fmt.Println(\"========================================================\")
 	fmt.Println(\"          Installation Complete!\")
@@ -274,9 +248,6 @@ func runWizard() {
 '@
 \$mainGo | Out-File -FilePath \"cmd\server\main.go\" -Encoding UTF8
 "@
-
-REM Clean up temp file
-if exist "cmd\server\main_part1.go" del cmd\server\main_part1.go
 
 echo Building Go binary...
 go build -ldflags="-s -w" -o lab-asset-manager.exe ./cmd/server
@@ -297,12 +268,5 @@ echo   Build Successful!
 echo ========================================================
 echo.
 echo Binary: lab-asset-manager.exe
-echo.
-echo Next steps:
-echo 1. Create dist folder and copy React build: mkdir dist
-echo 2. Copy web\dist contents to dist folder
-echo 3. Create data folder: mkdir data
-echo 4. Run installer: set INSTALL_MODE=wizard ^&^& lab-asset-manager.exe
-echo    Or run directly: lab-asset-manager.exe
 echo.
 pause

@@ -9,7 +9,6 @@ import {
   MapPin,
   Package,
   Printer,
-  Settings,
   Shield,
   Upload,
   UserCog,
